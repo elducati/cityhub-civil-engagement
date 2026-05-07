@@ -1,96 +1,188 @@
-import { useState, FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Card,
+  CardContent,
+  Alert,
+  InputAdornment,
+  IconButton,
+  Grid,
+} from '@mui/material';
+import EmailIcon from '@mui/icons-material/Email';
+import PersonIcon from '@mui/icons-material/Person';
+import LockIcon from '@mui/icons-material/Lock';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { register } from '../services/auth';
-import { useAuth } from '../context/AuthContext';
+import { glassCardStyle, gradientBackground } from '../theme';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { login: setAuth } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (password !== confirmPassword) {
+    
+    if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-
-    if (password.length < 6) {
+    if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
-
     try {
-      const response = await register({ email, password });
-      setAuth(response.token, {
-        id: response.id,
-        email: response.email,
-        role: response.role as 'USER' | 'MODERATOR' | 'ADMIN',
-      });
-      navigate('/');
-    } catch (err) {
-      setError('Registration failed. Email may already be in use.');
+      await register({ name: formData.name, email: formData.email, password: formData.password });
+      navigate('/login');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1>Register</h1>
-        {error && <div className="alert alert-error">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              minLength={6}
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-            />
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-        <p className="auth-footer">
-          Already have an account? <Link to="/login">Login</Link>
-        </p>
-      </div>
-    </div>
+    <Box sx={gradientBackground}>
+      <Container maxWidth="sm" sx={{ py: 8 }}>
+        <Card sx={{ ...glassCardStyle, p: 3 }}>
+          <CardContent>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h3" component="h1" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>
+                Join CityHub
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Create an account to start making a difference
+              </Typography>
+            </Box>
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <TextField
+                fullWidth
+                label="Full Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Email Address"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Confirm Password"
+                    name="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon color="action" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
+                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+              </Grid>
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                size="large"
+                disabled={loading}
+                sx={{ py: 1.5, fontSize: '1rem', fontWeight: 600 }}
+              >
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </Button>
+            </form>
+
+            <Box sx={{ textAlign: 'center', mt: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                Already have an account?{' '}
+                <Typography
+                  component={Link}
+                  to="/login"
+                  variant="body2"
+                  sx={{ color: 'primary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                >
+                  Sign in
+                </Typography>
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      </Container>
+    </Box>
   );
 }
