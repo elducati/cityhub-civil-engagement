@@ -42,3 +42,13 @@ export async function updateProposal(id: string, data: UpdateProposalData): Prom
 export async function deleteProposal(id: string): Promise<void> {
   await api.delete(`/proposals/${id}`);
 }
+
+export async function getUserProposals(): Promise<ProposalsResponse> {
+  const response = await api.get<ProposalsResponse>('/proposals/me');
+  return response.data;
+}
+
+export async function getUserVotes(): Promise<ProposalsResponse> {
+  const response = await api.get<ProposalsResponse>('/proposals/voted');
+  return response.data;
+}

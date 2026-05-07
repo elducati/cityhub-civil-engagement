@@ -29,4 +29,19 @@ api.interceptors.response.use(
   }
 );
 
+export async function getAllUsers() {
+  const response = await api.get('/admin/users');
+  return response.data;
+}
+
+export async function updateUserRole(userId: string, role: string) {
+  const response = await api.put(`/admin/users/${userId}/role`, { role });
+  return response.data;
+}
+
+export async function getAnalytics() {
+  const response = await api.get('/admin/analytics');
+  return response.data;
+}
+
 export default api;

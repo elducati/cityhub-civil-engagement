@@ -13,6 +13,8 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Navigation() {
@@ -72,6 +74,24 @@ export default function Navigation() {
           {user ? (
             <>
               <Button
+                component={Link}
+                to="/dashboard"
+                startIcon={<DashboardIcon />}
+                sx={{ color: location.pathname === '/dashboard' ? 'primary.main' : 'text.primary' }}
+              >
+                Dashboard
+              </Button>
+              {(user.role === 'ADMIN' || user.role === 'MODERATOR') && (
+                <Button
+                  component={Link}
+                  to="/admin"
+                  startIcon={<AdminPanelSettingsIcon />}
+                  sx={{ color: location.pathname === '/admin' ? 'primary.main' : 'text.primary' }}
+                >
+                  Admin
+                </Button>
+              )}
+              <Button
                 variant="contained"
                 startIcon={<AddCircleOutlineIcon />}
                 component={Link}
@@ -129,6 +149,14 @@ export default function Navigation() {
           </MenuItem>
           {user ? (
             <>
+              <MenuItem component={Link} to="/dashboard" onClick={handleClose}>
+                Dashboard
+              </MenuItem>
+              {(user.role === 'ADMIN' || user.role === 'MODERATOR') && (
+                <MenuItem component={Link} to="/admin" onClick={handleClose}>
+                  Admin
+                </MenuItem>
+              )}
               <MenuItem component={Link} to="/proposals/create" onClick={handleClose}>
                 New Proposal
               </MenuItem>
