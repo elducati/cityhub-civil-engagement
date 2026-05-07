@@ -7,20 +7,19 @@ ENV NODE_ENV=production
 # Stage 2: Development
 FROM base AS development
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
+COPY packages/backend/package*.json ./
+RUN npm install --include=dev
+COPY packages/backend ./
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
 # Stage 3: Build
 FROM base AS build
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --ignore-scripts --only=production && \
-    npm ci --ignore-scripts --include=dev
-COPY tsconfig.json ./
-COPY src ./src
+COPY packages/backend/package*.json ./
+RUN npm install --include=dev
+COPY packages/backend/tsconfig.json ./
+COPY packages/backend/src ./src
 RUN npm run build && \
     npm prune --production
 

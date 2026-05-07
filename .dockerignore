@@ -1,9 +1,11 @@
 node_modules
+packages/*/node_modules
 .env
 .env.local
 .env.*.local
 coverage
 dist
+packages/*/dist
 .git
 .gitignore
 README.md

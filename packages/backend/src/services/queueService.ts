@@ -1,7 +1,9 @@
-import amqp, { Connection, Channel } from 'amqplib';
+import amqp, { Channel } from 'amqplib';
 import { config } from '../config';
 
-let connection: Connection | null = null;
+type AmqpConnection = typeof amqp.connect extends (...args: any[]) => Promise<infer R> ? R : never;
+
+let connection: AmqpConnection | null = null;
 let channel: Channel | null = null;
 
 const QUEUE_NAME = 'votes';

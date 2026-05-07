@@ -118,9 +118,11 @@ export async function validateToken(token: string): Promise<AuthUser | null> {
 }
 
 function generateToken(user: { id: string; email: string; role: string }): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const options: any = { expiresIn: config.AUTH_JWT_EXPIRY };
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     config.AUTH_JWT_SECRET,
-    { expiresIn: config.AUTH_JWT_EXPIRY }
+    options
   );
 }

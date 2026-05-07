@@ -252,9 +252,9 @@ export async function updateProposal(
   }
 
   const updateData: Record<string, unknown> = {};
-  if (input.title) updateData.title = input.title;
-  if (input.description) updateData.description = input.description;
-  if (input.status) updateData.status = input.status;
+  if (input.title !== undefined) updateData.title = input.title;
+  if (input.description !== undefined) updateData.description = input.description;
+  if (input.status !== undefined) updateData.status = input.status;
 
   const [proposal] = await db('proposals')
     .where('id', proposalId)
@@ -266,7 +266,7 @@ export async function updateProposal(
     action: 'UPDATE',
     entityType: 'proposal',
     entityId: proposalId,
-    metadata: input,
+    metadata: updateData,
   });
 
   await deleteCachePattern('proposals:*');
