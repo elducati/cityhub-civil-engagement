@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodError } from 'zod';
+import { ZodError, ZodError as ZodErrorType } from 'zod';
 import type { ApiError } from '../types/express.d';
 import { logger } from '../services/logger';
 
 export function errorHandler(
-  err: ApiError,
+  err: Error & Partial<ApiError>,
   req: Request,
   res: Response,
   _next: NextFunction
@@ -24,7 +24,7 @@ export function errorHandler(
     res.status(400).json({
       error: 'Bad Request',
       message: 'Validation failed',
-      details: err.errors.map((e) => ({
+      details: err.errors.map((e: ZodErrorType['errors'][number]) => ({
         path: e.path.join('.'),
         message: e.message,
       })),

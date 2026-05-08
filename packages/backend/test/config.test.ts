@@ -102,7 +102,7 @@ describe('Rate Limiting Configuration', () => {
     const limits = {
       auth: { windowMs: 60000, maxRequests: 10 },
       api: { windowMs: 60000, maxRequests: 100 },
-      voting: { windowMs: 60000, maxRequests: 30 },
+      voting: { windowMs: 60000, maxRequests: 20 },
     };
 
     expect(limits.auth.maxRequests).toBeLessThan(limits.api.maxRequests);

@@ -133,14 +133,14 @@ export async function listProposals(
   });
 
   if (currentUserId && proposals.length > 0) {
-    const proposalIds = proposals.map((p) => p.id);
+    const proposalIds = proposals.map((p: Proposal) => p.id);
     const votes = await db('votes')
       .select('proposal_id')
       .whereIn('proposal_id', proposalIds)
       .where('user_id', currentUserId);
 
     const votedIds = new Set(votes.map((v: { proposal_id: string }) => v.proposal_id));
-    proposals = proposals.map((p) => ({
+    proposals = proposals.map((p: Proposal) => ({
       ...p,
       userVote: votedIds.has(p.id),
     }));
