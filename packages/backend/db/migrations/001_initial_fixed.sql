@@ -1,6 +1,3 @@
--- Initial schema migration for Civic Engagement Platform
--- Version: 001_initial
-
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -34,13 +31,6 @@ CREATE INDEX idx_proposals_status ON proposals(status);
 CREATE INDEX idx_proposals_created_at ON proposals(created_at DESC);
 CREATE INDEX idx_proposals_vote_count ON proposals(vote_count DESC);
 CREATE INDEX idx_proposals_author_id ON proposals(author_id);
-
--- Full-text search index on proposals
-CREATE INDEX idx_proposals_fts ON proposals USING GIN (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')));
-
--- Insert-only rules for audit_logs
-CREATE RULE audit_logs_no_update AS ON UPDATE TO audit_logs DO INSTEAD NOTHING;
-CREATE RULE audit_logs_no_delete AS ON DELETE TO audit_logs DO INSTEAD NOTHING;
 
 -- Votes table
 CREATE TABLE votes (

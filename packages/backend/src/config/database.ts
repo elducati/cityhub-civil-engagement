@@ -1,4 +1,4 @@
-import knex, { Knex } from 'knex';
+﻿import knex, { Knex } from 'knex';
 import { config } from './index';
 
 let db: Knex | null = null;
@@ -12,7 +12,7 @@ export function initDatabase(): Knex {
     client: 'pg',
     connection: {
       connectionString: config.DATABASE_URL,
-      ssl: config.DATABASE_SSL ? { rejectUnauthorized: false } : false,
+      ssl: false,
     },
     pool: {
       min: 2,

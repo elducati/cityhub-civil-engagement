@@ -5,7 +5,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://cityhub-api:3000',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port: 5173,

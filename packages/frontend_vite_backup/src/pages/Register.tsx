@@ -36,21 +36,64 @@ export default function Register() {
     e.preventDefault();
     setError('');
     
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    // Frontend validation before submission
+    if (!formData.name.trim()) {
+      setError('Please enter your full name');
+      return;
+    }
+    if (!formData.email.includes('@') || !formData.email.includes('.')) {
+      setError('Please enter a valid email address');
       return;
     }
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
 
     setLoading(true);
     try {
+      console.log('Sending registration request:', { name: formData.name, email: formData.email, password: '***' });
       await register({ name: formData.name, email: formData.email, password: formData.password });
+      console.log('Registration successful!');
       navigate('/login');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      console.error('Registration error:', err);
+      
+      // Handle different types of errors
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (err.response) {
+        // We received a response from the server
+        const errorData = err.response.data;
+        console.error('Error data from server:', errorData);
+        
+        if (errorData?.message) {
+          errorMessage = errorData.message;
+        } else if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
+        
+        // Handle validation errors with details
+        if (errorData?.details && Array.isArray(errorData.details)) {
+          const details = errorData.details.map((d: any) => d.message).join('; ');
+          setError(`Validation failed: ${details}`);
+          return;
+        }
+      } else if (err.request) {
+        // The request was made but no response was received
+        console.error('No response received:', err.request);
+        errorMessage = 'Network error: Unable to reach the server. Please check your connection and try again.';
+      } else {
+        // Something happened in setting up the request
+        console.error('Request setup error:', err.message);
+        errorMessage = `Registration error: ${err.message}`;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

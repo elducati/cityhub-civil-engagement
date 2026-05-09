@@ -20,14 +20,25 @@ export function errorHandler(
     method: req.method,
   }, 'Request error');
 
-  if (err instanceof ZodError) {
+  const errorName = err.constructor.name;
+
+  if (errorName === 'ZodError' || err instanceof ZodError) {
+    const zodErr = err as ZodError;
     res.status(400).json({
       error: 'Bad Request',
       message: 'Validation failed',
-      details: err.errors.map((e: ZodErrorType['errors'][number]) => ({
+      details: zodErr.errors.map((e: ZodErrorType['errors'][number]) => ({
         path: e.path.join('.'),
         message: e.message,
       })),
+    });
+    return;
+  }
+
+  if (errorName === 'SyntaxError' && err.message.includes('JSON')) {
+    res.status(400).json({
+      error: 'Bad Request',
+      message: 'Invalid JSON in request body',
     });
     return;
   }

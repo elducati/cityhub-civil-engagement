@@ -2,6 +2,7 @@ import api from './api';
 import type { AuthResponse, User } from '../types';
 
 interface RegisterData {
+  name: string;
   email: string;
   password: string;
   role?: 'USER' | 'MODERATOR' | 'ADMIN';
