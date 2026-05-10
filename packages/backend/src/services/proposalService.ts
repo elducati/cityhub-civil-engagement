@@ -88,65 +88,79 @@ export async function listProposals(
   const offset = (page - 1) * limit;
   const isDescending = true;
 
-  const cacheKey = `proposals:${page}:${limit}:${params.status || 'all'}:${params.sort || 'createdAt'}:${params.search || ''}:${currentUserId || 'anon'}`;
+  const cacheKey = `proposals:list:${page}:${limit}:${params.status || 'all'}:${params.sort || 'createdAt'}:${params.search || ''}`;
   const cached = await getCache<{ data: Proposal[]; pagination: PaginationResult }>(cacheKey);
-  if (cached) return cached;
+  let proposals = cached ? [...cached.data] : [];
+  let total = cached ? cached.pagination.total : 0;
 
-  let query = db('proposals')
-    .select(
-      'proposals.id',
-      'proposals.title',
-      'proposals.description',
-      'proposals.author_id',
-      'proposals.status',
-      'proposals.vote_count',
-      'proposals.created_at',
-      'proposals.updated_at'
-    )
-    .orderBy(params.sort === 'voteCount' ? 'vote_count' : 'created_at', isDescending ? 'desc' : 'asc')
-    .limit(limit)
-    .offset(offset);
+  if (!cached) {
+    let query = db('proposals')
+      .select(
+        'proposals.id',
+        'proposals.title',
+        'proposals.description',
+        'proposals.author_id',
+        'proposals.status',
+        'proposals.vote_count',
+        'proposals.created_at',
+        'proposals.updated_at'
+      )
+      .orderBy(params.sort === 'voteCount' ? 'vote_count' : 'created_at', isDescending ? 'desc' : 'asc')
+      .limit(limit)
+      .offset(offset);
 
-  if (params.status) {
-    query = query.where('status', params.status);
+    if (params.status) {
+      query = query.where('status', params.status);
+    }
+
+    if (params.search) {
+      query = query.whereRaw(
+        "to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')) @@ plainto_tsquery('english', ?)",
+        [params.search]
+      );
+    }
+
+    let countQuery = db('proposals').count('id as total');
+    if (params.status) {
+      countQuery = countQuery.where('status', params.status);
+    }
+    const countResult = await countQuery.first();
+    total = parseInt(String(countResult?.total || 0), 10);
+
+    const rows = await query;
+
+    proposals = rows.map((row: ProposalRow) => mapRowToProposal(row as ProposalRow));
+
+    const result = {
+      data: proposals,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+
+    await setCache(cacheKey, result, 60);
   }
-
-  if (params.search) {
-    query = query.whereRaw(
-      "to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')) @@ plainto_tsquery('english', ?)",
-      [params.search]
-    );
-  }
-
-  let countQuery = db('proposals').count('id as total');
-  if (params.status) {
-    countQuery = countQuery.where('status', params.status);
-  }
-  const countResult = await countQuery.first();
-  const total = parseInt(String(countResult?.total || 0), 10);
-
-  const rows = await query;
-
-  let proposals = rows.map((row: ProposalRow) => {
-    const prop = mapRowToProposal(row as ProposalRow);
-    return { ...prop, userVote: false };
-  });
 
   if (currentUserId && proposals.length > 0) {
-    const proposalIds = proposals.map((p: Proposal) => p.id);
+    const proposalIds = proposals.map((p) => p.id);
     const votes = await db('votes')
       .select('proposal_id')
       .whereIn('proposal_id', proposalIds)
       .where('user_id', currentUserId);
 
-    const votedIds = new Set(votes.map((v: { proposal_id: string }) => v.proposal_id));
-    proposals = proposals.map((p: Proposal) => ({
+    const votedIds = new Set(votes.map((v) => v.proposal_id));
+    proposals = proposals.map((p) => ({
       ...p,
       userVote: votedIds.has(p.id),
     }));
+  } else {
+    proposals = proposals.map((p) => ({ ...p, userVote: false }));
   }
 
-  const result = {
+  return {
     data: proposals,
     pagination: {
       page,
@@ -155,9 +169,6 @@ export async function listProposals(
       totalPages: Math.ceil(total / limit),
     },
   };
-
-  await setCache(cacheKey, result, 60);
-  return result;
 }
 
 export async function getProposalById(

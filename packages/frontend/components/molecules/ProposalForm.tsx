@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/components/atoms/Button';
-import { Input } from '@/components/atoms/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const proposalSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(100, 'Title must be less than 100 characters'),
@@ -81,10 +82,10 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-2">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>1</div>
-          <div className={`w-16 h-1 ${step >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`} />
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>2</div>
+        <div className="flex items-center gap-2">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${step >= 1 ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant'}`}>1</div>
+          <div className={`w-16 h-1 rounded-full ${step >= 2 ? 'bg-primary' : 'bg-outline'}`} />
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${step >= 2 ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant'}`}>2</div>
         </div>
       </div>
 
@@ -96,18 +97,19 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
             placeholder="Enter a clear, descriptive title"
             error={errors.title?.message}
           />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-on-surface">Description</Label>
             <textarea
               {...register('description')}
+              id="description"
               rows={6}
               placeholder="Describe your proposal in detail..."
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+              className="flex w-full rounded-xl border border-outline bg-surface-base p-4 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-none"
             />
-            {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>}
+            {errors.description && <p className="text-sm text-error">{errors.description.message}</p>}
           </div>
           <div className="flex justify-end">
-            <Button type="button" onClick={handleNext}>Next</Button>
+            <Button type="button" onClick={handleNext} className="rounded-full">Next</Button>
           </div>
         </div>
       )}
@@ -118,23 +120,24 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
             name="category"
             control={control}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <div className="space-y-2">
+                <Label htmlFor="category" className="text-on-surface">Category</Label>
                 <select
                   {...field}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                  id="category"
+                  className="flex h-12 w-full rounded-xl border border-outline bg-surface-base px-4 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
                 >
                   <option value="">Select a category</option>
                   {CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
                   ))}
                 </select>
-                {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>}
+                {errors.category && <p className="text-sm text-error">{errors.category.message}</p>}
               </div>
             )}
           />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+          <div className="space-y-2">
+            <Label className="text-on-surface">Tags</Label>
             <div className="flex gap-2 mb-2">
               <Input
                 value={tagInput}
@@ -142,21 +145,23 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
                 placeholder="Add a tag"
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
               />
-              <Button type="button" variant="outline" onClick={handleAddTag}>Add</Button>
+              <Button type="button" variant="outline" onClick={handleAddTag} className="rounded-full">Add</Button>
             </div>
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
-                <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">
                   {tag}
-                  <button type="button" onClick={() => handleRemoveTag(tag)} className="ml-1.5 text-blue-600 hover:text-blue-900">×</button>
+                  <button type="button" onClick={() => handleRemoveTag(tag)} className="ml-1.5 text-on-primary-container hover:opacity-70">×</button>
                 </span>
               ))}
             </div>
-            {errors.tags && <p className="mt-1 text-sm text-red-600">{errors.tags.message}</p>}
+            {errors.tags && <p className="text-sm text-error">{errors.tags.message}</p>}
           </div>
           <div className="flex justify-between">
-            <Button type="button" variant="outline" onClick={handleBack}>Back</Button>
-            <Button type="submit" isLoading={isLoading}>Submit Proposal</Button>
+            <Button type="button" variant="outline" onClick={handleBack} className="rounded-full">Back</Button>
+            <Button type="submit" disabled={isLoading} className="rounded-full">
+              {isLoading ? 'Submitting...' : 'Submit Proposal'}
+            </Button>
           </div>
         </div>
       )}

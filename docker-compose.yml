@@ -87,7 +87,7 @@ services:
       target: development
     container_name: cityhub-web
     environment:
-      NEXT_PUBLIC_API_URL: http://cityhub-api:3000
+      NEXT_PUBLIC_API_URL: http://host.docker.internal:3000
       NEXT_PUBLIC_APP_URL: http://localhost:5173
       NODE_ENV: development
       PORT: 5173
@@ -106,8 +106,13 @@ services:
       - ./packages/frontend/public:/app/public
       - ./packages/frontend/next.config.js:/app/next.config.js
       - ./packages/frontend/tsconfig.json:/app/tsconfig.json
+      - ./packages/frontend/package.json:/app/package.json
+      - ./packages/frontend/tailwind.config.js:/app/tailwind.config.js
+      - ./packages/frontend/postcss.config.js:/app/postcss.config.js
     depends_on:
       - api
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   postgres_data:
