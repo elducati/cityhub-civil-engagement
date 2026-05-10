@@ -3,9 +3,9 @@
   "/(auth)/login/page": "app/(auth)/login/page.js",
   "/(auth)/register/page": "app/(auth)/register/page.js",
   "/proposals/[id]/page": "app/proposals/[id]/page.js",
+  "/page": "app/page.js",
   "/(protected)/dashboard/page": "app/(protected)/dashboard/page.js",
   "/(protected)/proposals/create/page": "app/(protected)/proposals/create/page.js",
-  "/page": "app/page.js",
   "/proposals/page": "app/proposals/page.js",
   "/(protected)/admin/proposals/page": "app/(protected)/admin/proposals/page.js"
 }
