@@ -35,8 +35,9 @@ describe('analyticsService', () => {
 
     it('should calculate proposal statistics from database', async () => {
       (getCache as jest.Mock).mockResolvedValue(null);
+      (setCache as jest.Mock).mockResolvedValue(undefined);
 
-      const mockDb = {
+      const mockDb = jest.fn().mockReturnValue({
         count: jest.fn().mockReturnThis(),
         first: jest.fn().mockResolvedValueOnce({ total: 10 }),
         select: jest.fn().mockReturnThis(),
@@ -46,7 +47,7 @@ describe('analyticsService', () => {
           { status: 'ARCHIVED', count: 2 },
         ]),
         where: jest.fn().mockReturnThis(),
-      };
+      });
       (getDatabase as jest.Mock).mockReturnValue(mockDb);
 
       const result = await analyticsService.getProposalAnalytics();
@@ -60,8 +61,9 @@ describe('analyticsService', () => {
 
     it('should calculate monthly proposal counts', async () => {
       (getCache as jest.Mock).mockResolvedValue(null);
+      (setCache as jest.Mock).mockResolvedValue(undefined);
 
-      const mockDb = {
+      const mockDb = jest.fn().mockReturnValue({
         count: jest.fn().mockReturnThis(),
         first: jest.fn()
           .mockResolvedValueOnce({ total: 10 })
@@ -70,7 +72,7 @@ describe('analyticsService', () => {
         select: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockResolvedValue([]),
         where: jest.fn().mockReturnThis(),
-      };
+      });
       (getDatabase as jest.Mock).mockReturnValue(mockDb);
 
       const result = await analyticsService.getProposalAnalytics();
@@ -98,8 +100,9 @@ describe('analyticsService', () => {
 
     it('should calculate voting statistics from database', async () => {
       (getCache as jest.Mock).mockResolvedValue(null);
+      (setCache as jest.Mock).mockResolvedValue(undefined);
 
-      const mockDb = {
+      const mockDb = jest.fn().mockReturnValue({
         count: jest.fn().mockReturnThis(),
         first: jest.fn()
           .mockResolvedValueOnce({ total: 100 })
@@ -112,7 +115,7 @@ describe('analyticsService', () => {
           { proposal_id: 'prop-1', votes: 30 },
           { proposal_id: 'prop-2', votes: 20 },
         ]),
-      };
+      });
       (getDatabase as jest.Mock).mockReturnValue(mockDb);
 
       const result = await analyticsService.getVotingAnalytics();
@@ -126,8 +129,9 @@ describe('analyticsService', () => {
 
     it('should handle zero users for turnout calculation', async () => {
       (getCache as jest.Mock).mockResolvedValue(null);
+      (setCache as jest.Mock).mockResolvedValue(undefined);
 
-      const mockDb = {
+      const mockDb = jest.fn().mockReturnValue({
         count: jest.fn().mockReturnThis(),
         first: jest.fn()
           .mockResolvedValueOnce({ total: 0 })
@@ -137,7 +141,7 @@ describe('analyticsService', () => {
         select: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
         limit: jest.fn().mockResolvedValue([]),
-      };
+      });
       (getDatabase as jest.Mock).mockReturnValue(mockDb);
 
       const result = await analyticsService.getVotingAnalytics();
@@ -147,13 +151,14 @@ describe('analyticsService', () => {
 
     it('should get top 20 proposals by votes', async () => {
       (getCache as jest.Mock).mockResolvedValue(null);
+      (setCache as jest.Mock).mockResolvedValue(undefined);
 
       const proposals = Array.from({ length: 25 }, (_, i) => ({
         proposal_id: `prop-${i}`,
         votes: 30 - i,
       }));
 
-      const mockDb = {
+      const mockDb = jest.fn().mockReturnValue({
         count: jest.fn().mockReturnThis(),
         first: jest.fn()
           .mockResolvedValueOnce({ total: 100 })
@@ -162,8 +167,8 @@ describe('analyticsService', () => {
         distinct: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue(proposals),
-      };
+        limit: jest.fn().mockResolvedValue(proposals.slice(0, 20)),
+      });
       (getDatabase as jest.Mock).mockReturnValue(mockDb);
 
       const result = await analyticsService.getVotingAnalytics();

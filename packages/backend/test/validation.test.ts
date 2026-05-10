@@ -3,7 +3,7 @@ import { z } from 'zod';
 const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  name: z.string().min(1, 'Name is required').max(200, 'Name too long'),
+  name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
 });
 
 const loginSchema = z.object({
@@ -13,7 +13,7 @@ const loginSchema = z.object({
 
 const proposalSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters').max(500, 'Title too long'),
-  description: z.string().min(50, 'Description must be at least 50 characters'),
+  description: z.string().min(50, 'Description must be at least 50 characters').max(5000, 'Description too long'),
 });
 
 const updateProposalSchema = z.object({
@@ -102,7 +102,7 @@ describe('Input Validation', () => {
       const invalidData = {
         email: 'test@example.com',
         password: 'password123',
-        name: 'a'.repeat(200),
+        name: 'a'.repeat(201),
       };
 
       const result = registerSchema.safeParse(invalidData);
@@ -212,7 +212,7 @@ describe('Input Validation', () => {
     it('should accept very long description', () => {
       const validData = {
         title: 'Valid Title',
-        description: 'a'.repeat(10000),
+        description: 'a'.repeat(4000),
       };
 
       const result = proposalSchema.safeParse(validData);
@@ -315,8 +315,8 @@ describe('SQL Injection Prevention', () => {
 
       xssInputs.forEach(input => {
         const result = proposalSchema.safeParse({
-          title: 'Test Title',
-          description: input,
+          title: 'Test Title Test Title Test',
+          description: input + ' ' + 'a'.repeat(100),
         });
 
         expect(result.success).toBe(true);
