@@ -1,7 +1,9 @@
-#!/usr/bin/env sh
-if [ -z "$HUSKY" ]; then
-  exit 0
-fi
+echo "husky - DEPRECATED
 
-export HUSKY="true"
-command -v git >/dev/null && git rev-parse --git-dir >/dev/null && exit 0 || exit 1
+Please remove the following two lines from $0:
+
+#!/usr/bin/env sh
+. \"\$(dirname -- \"\$0\")/_/husky.sh\"
+
+They WILL FAIL in v10.0.0
+"

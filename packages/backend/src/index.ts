@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config';
-import { initDatabase } from './config/database';
+import { initDatabase, getDatabase } from './config/database';
 import authRoutes from './routes/auth';
 import proposalRoutes from './routes/proposals';
 import analyticsRoutes from './routes/analytics';
@@ -14,6 +14,17 @@ import { connectToQueue } from './services/queueService';
 import { logger } from './services/logger';
 
 const app = express();
+
+let healthCheckRedisClient: RedisClientType | null = null;
+
+async function getOrCreateRedisClient(): Promise<RedisClientType> {
+  if (healthCheckRedisClient && healthCheckRedisClient.isOpen) {
+    return healthCheckRedisClient;
+  }
+  healthCheckRedisClient = createClient({ url: config.REDIS_URL });
+  await healthCheckRedisClient.connect();
+  return healthCheckRedisClient;
+}
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -66,13 +77,14 @@ app.get('/api/health', async (_req: Request, res: Response) => {
   };
 
   try {
-    initDatabase();
+    const db = getDatabase();
+    await db.raw('SELECT 1');
   } catch {
     services.postgres = 'unhealthy';
   }
 
   try {
-    const redisClient = createClient({ url: config.REDIS_URL });
+    const redisClient = await getOrCreateRedisClient();
     await redisClient.ping();
   } catch {
     services.redis = 'unhealthy';

@@ -39,10 +39,19 @@ export async function deleteCache(key: string): Promise<void> {
 
 export async function deleteCachePattern(pattern: string): Promise<void> {
   const client = await getRedisClient();
-  const keys = await client.keys(pattern);
-  if (keys.length > 0) {
-    await client.del(keys);
-  }
+  let cursor = '0';
+  
+  do {
+    const [newCursor, keys] = await client.scan(cursor, {
+      MATCH: pattern,
+      COUNT: 100,
+    });
+    cursor = newCursor;
+    
+    if (keys.length > 0) {
+      await client.del(keys);
+    }
+  } while (cursor !== '0');
 }
 
 export async function incrementVoteBuffer(proposalId: string): Promise<number> {

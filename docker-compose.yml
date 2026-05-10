@@ -87,14 +87,25 @@ services:
       target: development
     container_name: cityhub-web
     environment:
-      VITE_API_URL: http://cityhub-api:3000
-      VITE_APP_URL: http://localhost:5173
-      VITE_NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://cityhub-api:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:5173
+      NODE_ENV: development
+      PORT: 5173
     ports:
       - "5173:5173"
     volumes:
-      - ./packages/frontend:/app
-      - /app/node_modules
+      - ./packages/frontend/src:/app/src
+      - ./packages/frontend/app:/app/app
+      - ./packages/frontend/components:/app/components
+      - ./packages/frontend/lib:/app/lib
+      - ./packages/frontend/hooks:/app/hooks
+      - ./packages/frontend/types:/app/types
+      - ./packages/frontend/styles:/app/styles
+      - ./packages/frontend/contexts:/app/contexts
+      - ./packages/frontend/config:/app/config
+      - ./packages/frontend/public:/app/public
+      - ./packages/frontend/next.config.js:/app/next.config.js
+      - ./packages/frontend/tsconfig.json:/app/tsconfig.json
     depends_on:
       - api
 
