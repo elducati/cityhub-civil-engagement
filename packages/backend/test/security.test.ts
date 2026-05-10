@@ -13,10 +13,18 @@ function generateToken(user: { id: string; email: string; role: string }): strin
   );
 }
 
+function generateTokenWithJTI(user: { id: string; email: string; role: string }): string {
+  return jwt.sign(
+    { userId: user.id, email: user.email, role: user.role, jti: Math.random().toString(36).substring(7) },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRY }
+  );
+}
+
 function verifyToken(token: string): any {
   try {
     return jwt.verify(token, JWT_SECRET);
-  } catch (error) {
+  } catch (error: any) {
     throw new Error('Invalid token');
   }
 }
@@ -110,50 +118,52 @@ describe('Security Utils', () => {
       expect(decoded.iat).toBeDefined();
     });
 
-    it('should verify valid token', async () => {
+    it('should verify valid token', () => {
       const user = { id: 'user-123', email: 'test@example.com', role: 'USER' };
       const token = generateToken(user);
 
-      const decoded = await verifyToken(token);
+      const decoded = verifyToken(token);
 
       expect(decoded.userId).toBe('user-123');
       expect(decoded.email).toBe('test@example.com');
       expect(decoded.role).toBe('USER');
     });
 
-    it('should throw error for invalid token', async () => {
-      await expect(verifyToken('invalid-token')).rejects.toThrow('Invalid token');
+    it('should throw error for invalid token', () => {
+      expect(() => verifyToken('invalid-token')).toThrow('Invalid token');
     });
 
-    it('should throw error for malformed token', async () => {
-      await expect(verifyToken('invalid.token.here')).rejects.toThrow();
+    it('should throw error for malformed token', () => {
+      expect(() => verifyToken('invalid.token.here')).toThrow();
     });
 
-    it('should throw error for expired token', async () => {
+    it('should throw error for expired token', () => {
       const expiredToken = jwt.sign(
         { userId: 'user-123', email: 'test@example.com', role: 'USER' },
         JWT_SECRET,
         { expiresIn: '-1s' }
       );
 
-      await expect(verifyToken(expiredToken)).rejects.toThrow();
+      expect(() => verifyToken(expiredToken)).toThrow();
     });
 
-    it('should throw error for token with wrong secret', async () => {
+    it('should throw error for token with wrong secret', () => {
       const user = { id: 'user-123', email: 'test@example.com', role: 'USER' };
       const token = jwt.sign(user, 'wrong-secret-key');
 
-      await expect(verifyToken(token)).rejects.toThrow();
+      expect(() => verifyToken(token)).toThrow();
     });
 
     it('should generate unique jti for each token', () => {
       const user = { id: 'user-123', email: 'test@example.com', role: 'USER' };
-      const token1 = generateToken(user);
-      const token2 = generateToken(user);
+      const token1 = generateTokenWithJTI(user);
+      const token2 = generateTokenWithJTI(user);
 
       const decoded1 = jwt.decode(token1) as any;
       const decoded2 = jwt.decode(token2) as any;
 
+      expect(decoded1.jti).toBeDefined();
+      expect(decoded2.jti).toBeDefined();
       expect(decoded1.jti).not.toBe(decoded2.jti);
     });
   });

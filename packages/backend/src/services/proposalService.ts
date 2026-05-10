@@ -2,7 +2,7 @@ import { getDatabase } from '../config/database';
 import { createError } from '../middleware/errorHandler';
 import { createAuditLog } from './auditService';
 import { getCache, setCache, deleteCachePattern } from './cacheService';
-import type { PaginationParams, PaginationResult } from '../types/express.d';
+import type { PaginationResult } from '../types/express.d';
 
 export type ProposalStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
 

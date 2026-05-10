@@ -2,11 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { logger } from '../services/logger';
 
 declare global {
-  namespace Express {
-    interface Request {
-      correlationId?: string;
-      startTime?: number;
-    }
+  interface Request {
+    correlationId?: string;
+    startTime?: number;
   }
 }
 

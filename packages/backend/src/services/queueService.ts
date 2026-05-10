@@ -1,7 +1,7 @@
 import amqp, { Channel } from 'amqplib';
 import { config } from '../config';
 
-type AmqpConnection = typeof amqp.connect extends (...args: any[]) => Promise<infer R> ? R : never;
+type AmqpConnection = Awaited<ReturnType<typeof amqp.connect>>;
 
 let connection: AmqpConnection | null = null;
 let channel: Channel | null = null;

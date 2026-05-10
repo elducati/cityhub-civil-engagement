@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import * as proposalService from '../services/proposalService';
 import * as voteService from '../services/voteService';
-import { authenticate, optionalAuth, AuthRequest, requireRole } from '../middleware/auth';
+import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 

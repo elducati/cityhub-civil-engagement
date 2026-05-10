@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { ZodError, ZodError as ZodErrorType } from 'zod';
 import type { ApiError } from '../types/express.d';
 import { logger } from '../services/logger';
@@ -6,8 +6,7 @@ import { logger } from '../services/logger';
 export function errorHandler(
   err: Error & Partial<ApiError>,
   req: Request,
-  res: Response,
-  _next: NextFunction
+  res: Response
 ): void {
   const statusCode = err.statusCode || 500;
 

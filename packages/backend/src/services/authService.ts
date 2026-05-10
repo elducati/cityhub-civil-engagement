@@ -43,14 +43,14 @@ function validateInsertResult<T>(result: T[] | undefined, operation: string): T 
 /**
  * Handles database constraint errors with specific messages
  */
-function handleDatabaseError(error: any, context: string): never {
+function handleDatabaseError(error: unknown, context: string): never {
   logger.error(
     { error: error.message, code: error.code, context },
     `Database error in ${context}`
   );
 
   // PostgreSQL unique constraint violation
-  if (error.code === '23505') {
+  if ((error as any).code === '23505') {
     if (error.message.includes('email')) {
       throw createError('This email is already registered. Try logging in instead.', 409);
     }
@@ -58,12 +58,12 @@ function handleDatabaseError(error: any, context: string): never {
   }
 
   // Foreign key constraint
-  if (error.code === '23503') {
+  if ((error as any).code === '23503') {
     throw createError('Invalid reference. Please check your input.', 400);
   }
 
   // Connection pool exhausted or timeout
-  if (error.message?.includes('timeout') || error.message?.includes('pool')) {
+  if ((error as any).message?.includes('timeout') || (error as any).message?.includes('pool')) {
     throw createError('Database is temporarily unavailable. Please try again.', 503);
   }
 

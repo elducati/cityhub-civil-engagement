@@ -1,5 +1,5 @@
 import { BaseRepository } from './baseRepository';
-import type { PaginationParams, PaginationResult } from '../types/express.d';
+import type { PaginationResult } from '../types/express.d';
 
 export type ProposalStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
 
@@ -122,7 +122,7 @@ export class ProposalRepository extends BaseRepository<Proposal> {
 
     const rows = await query;
 
-    const proposals = rows.map((row: any) => ({
+    const proposals = rows.map((row: { id: string; title: string; description: string; author_id: string; status: ProposalStatus; vote_count: number; created_at: Date; updated_at: Date; user_vote?: boolean }) => ({
       id: row.id,
       title: row.title,
       description: row.description,

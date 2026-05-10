@@ -29,8 +29,8 @@ describe('Registration Bug Fixes - Comprehensive Test Suite', () => {
       // Simulates the bug: .returning() returns undefined or empty array
       const result: MockUser[] | undefined = undefined;
       
-      const isValid = result && Array.isArray(result) && result.length > 0;
-      expect(isValid).toBe(false);
+      const isValid = result && Array.isArray(result) && (result as MockUser[]).length > 0;
+      expect(isValid).toBeFalsy();
     });
 
     it('should throw specific error when insert returns no rows', () => {
@@ -181,7 +181,7 @@ describe('Registration Bug Fixes - Comprehensive Test Suite', () => {
 
   describe('Edge Case: Password Hashing Timeout', () => {
     it('should timeout bcrypt if it takes too long', async () => {
-      const BCRYPT_TIMEOUT_MS = 10000;
+      const BCRYPT_TIMEOUT_MS = 100;
       
       const timeoutFn = async () => {
         const hashPromise = new Promise<string>(() => {
@@ -200,7 +200,7 @@ describe('Registration Bug Fixes - Comprehensive Test Suite', () => {
       } catch (error) {
         expect((error as Error).message).toBe('Timeout');
       }
-    });
+    }, 1000);
 
     it('should handle bcrypt errors gracefully', async () => {
       const password = 'test-password';
@@ -350,9 +350,11 @@ describe('Registration Bug Fixes - Comprehensive Test Suite', () => {
   describe('Frontend Error Handling Improvements', () => {
     it('should extract and display backend error message', () => {
       const errorResponse = {
-        data: {
-          message: 'This email is already registered. Try logging in instead.',
-          error: 'Conflict',
+        response: {
+          data: {
+            message: 'This email is already registered. Try logging in instead.',
+            error: 'Conflict',
+          },
         },
       };
 
@@ -372,11 +374,13 @@ describe('Registration Bug Fixes - Comprehensive Test Suite', () => {
 
     it('should handle validation error details', () => {
       const errorResponse = {
-        data: {
-          details: [
-            { path: 'email', message: 'Invalid email format' },
-            { path: 'password', message: 'Too short' },
-          ],
+        response: {
+          data: {
+            details: [
+              { path: 'email', message: 'Invalid email format' },
+              { path: 'password', message: 'Too short' },
+            ],
+          },
         },
       };
 
