@@ -121,24 +121,33 @@ Page (RSC/Client) → React Query Hook → API Client (fetch) → Express API
 - **RBAC**: Three roles — `USER`, `MODERATOR`, `ADMIN`
 - **Protected Routes**: Middleware-enforced auth guards
 - **Admin Guard**: Role-based sidebar navigation (MODERATOR sees limited menu)
+- **Live Auth Sync**: `useSyncExternalStore` pattern ensures NavBar and all components reflect auth state instantly after login/logout — no polling, no stale state
 
 ### Proposals
-- **Create**: Multi-step form (title → description → category/tags)
-- **Browse**: Server-rendered listing with filters (status, sort) and pagination
-- **Detail**: Full proposal view with voting and author info
+- **Create**: Multi-step form (title → description → category → tags → location)
+- **Categories**: Predefined set (Infrastructure, Environment, Public Safety, Transportation, Community, Other) with color-coded badges
+- **Location**: Optional latitude/longitude coordinates stored with proposal
+- **Browse**: Server-rendered listing with filters (status, category, sort) and pagination
+- **Detail**: Full proposal view with category badge, location coordinates (when present), voting, and author info
 - **Trending**: Cached top-voted proposals on landing page
 - **Voting**: One vote per user per proposal; Redis-backed duplicate detection
 - **Full-text Search**: PostgreSQL `to_tsvector` / `plainto_tsquery` on title + description
 
 ### Admin Dashboard
-- **Overview**: Stats cards (users, proposals, votes, engagement rate), trend indicators
-- **Proposals by Status**: Bar chart visualization with percentages
-- **Users by Role**: Role distribution breakdown
+- **Overview**: Stats cards (users, proposals, votes, engagement rate) with trend arrows
+- **Proposals by Status**: SVG bar chart with proportional bars and count labels
+- **Users by Role**: SVG donut chart showing role distribution with legend
+- **Proposal Trends**: Monthly comparison bar chart (this month vs last month)
 - **Recent Activity**: Live audit log feed
 - **User Management**: Paginated user table with inline role dropdown (ADMIN only)
 - **Proposal Moderation**: Filterable queue with Approve (→ CLOSED) / Reject (→ ARCHIVED)
-- **Audit Logs**: Immutable action trail with pagination
+- **Audit Logs**: Immutable action trail with pagination and action-type filter buttons
+- **CSV Export**: Download all proposals as CSV (columns: ID, Title, Description, Status, Votes, Category, Author, Date)
 - **Auto-refresh**: Dashboard stats refresh every 30 seconds
+
+### Notifications & UX
+- **Toast System**: Success/error/warning/info toasts with 4-second auto-dismiss, wired into all mutations (login, register, logout, create proposal, vote, admin role changes)
+- **Skeleton Loading**: Card and table row skeletons replace full-page spinners on admin pages — content-shaped placeholders during load
 
 ### Analytics
 - **Proposal Analytics**: Total counts, status distribution, monthly trends (with cache)
@@ -174,11 +183,12 @@ Page (RSC/Client) → React Query Hook → API Client (fetch) → Express API
 ### Proposals (Authenticated)
 | Method | Path | Role | Description |
 |--------|------|------|-------------|
-| POST | `/api/proposals` | USER+ | Create proposal |
+| POST | `/api/proposals` | USER+ | Create proposal (supports category, lat/lng) |
 | PUT | `/api/proposals/:id` | Owner/MOD+ | Update proposal |
 | DELETE | `/api/proposals/:id` | Owner/MOD+ | Delete proposal |
 | POST | `/api/proposals/:id/vote` | USER+ | Cast vote |
 | DELETE | `/api/proposals/:id/vote` | USER+ | Remove vote |
+| GET | `/api/proposals/export/csv` | ADMIN/MOD | Download all proposals as CSV |
 
 ### Admin
 | Method | Path | Role | Description |
@@ -229,14 +239,16 @@ tests/
 | `docker compose down` | Stop all services |
 | `npm run dev` | Start local dev servers |
 | `npm run build` | Build all packages |
+| `npm run test` | Run tests |
 | `npm run lint` | Lint all packages |
 | `npm run lint:fix` | Fix linting issues |
+| `npm run migrate --workspace=@cityhub/backend` | Run database migrations |
 
 ## Data Model
 
 ### Tables
 - **users**: `id (UUID)`, `email (unique)`, `name`, `password_hash`, `role` (USER/MODERATOR/ADMIN), `created_at`, `updated_at`
-- **proposals**: `id (UUID)`, `title`, `description`, `author_id` (FK→users), `status` (OPEN/CLOSED/ARCHIVED), `vote_count`, `created_at`, `updated_at`
+- **proposals**: `id (UUID)`, `title`, `description`, `author_id` (FK→users), `status` (OPEN/CLOSED/ARCHIVED), `vote_count`, `category` (optional), `latitude` (optional), `longitude` (optional), `created_at`, `updated_at`
 - **votes**: `id (UUID)`, `proposal_id` (FK→proposals), `user_id` (FK→users), `created_at` (unique on proposal+user)
 - **audit_logs**: `id (UUID)`, `user_id` (FK→users, nullable), `action`, `entity_type`, `entity_id`, `metadata (JSON)`, `created_at`
 - **GIN indexes**: Full-text search on proposal title + description
@@ -271,6 +283,16 @@ The service layer handles the conversion via `mapRow()`, keeping DB internals fr
 | 2026-05 | Dynamic API URL resolution | Fixed SSR/client hydration mismatch where `API_BASE` was computed once at module init |
 | 2026-05 | Targeted cache invalidation | Replaced aggressive `deleteCachePattern('proposals:*')` on every vote with single-key `deleteCache('proposals:trending:10')` |
 | 2026-05 | Codebase cleanup | Removed ~70 files (build artifacts, compiled test outputs, empty directories, dead code functions) |
+| 2026-05 | Admin dashboard | Full admin panel: dashboard stats, user management, proposal moderation, audit logs, CSV export |
+| 2026-05 | Categories + location | Added category/lat/lng to proposals — migration, API, form, listing filters, detail badge |
+| 2026-05 | Standard API envelope | All responses wrapped in `{success, data, error}` via middleware; frontend client unwraps transparently |
+| 2026-05 | Toast notifications | 4-type toast system with auto-dismiss, wired into all mutations via Zustand store |
+| 2026-05 | Skeleton loading | Card/table skeleton components replacing full-page spinners |
+| 2026-05 | Query bounds validation | Middleware clamps `page` (1-1000) and `limit` (1-100) to prevent DB abuse |
+| 2026-05 | Migration runner | `npm run migrate` applies SQL files in order, tracks in `_migrations` table, idempotent |
+| 2026-05 | Dashboard charts | Pure SVG BarChart, DonutChart, TrendChart — no external dependencies |
+| 2026-05 | Auth live-reload | `useSyncExternalStore` module-level generation counter — all components react to login/logout instantly |
+| 2026-05 | SEO meta tags | Dynamic per-page titles via `metadata` export (SSR) and `usePageTitle` hook (client) |
 
 ## License
 

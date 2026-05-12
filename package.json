@@ -12,6 +12,7 @@
     "lint": "npm run lint --workspaces",
     "lint:fix": "npm run lint:fix --workspaces",
     "typecheck": "npm run typecheck --workspaces",
+    "changelog": "node scripts/changelog.js",
     "prepare": "husky install"
   },
   "devDependencies": {
