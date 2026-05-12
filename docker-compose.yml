@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -87,10 +85,13 @@ services:
       target: development
     container_name: cityhub-web
     environment:
-      NEXT_PUBLIC_API_URL: http://host.docker.internal:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:5173
+      API_URL_FOR_SERVER: http://api:3000
       NODE_ENV: development
       PORT: 5173
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "5173:5173"
     volumes:
@@ -111,8 +112,54 @@ services:
       - ./packages/frontend/postcss.config.js:/app/postcss.config.js
     depends_on:
       - api
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+
+  # Test infrastructure services
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: cityhub-postgres-test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: civic_test
+    ports:
+      - "5433:5432"
+    profiles:
+      - test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: cityhub-redis-test
+    ports:
+      - "6380:6379"
+    profiles:
+      - test
+    command: redis-server --save "" --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq-test:
+    image: rabbitmq:3.13-management-alpine
+    container_name: cityhub-rabbitmq-test
+    ports:
+      - "5673:5672"
+    profiles:
+      - test
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
 volumes:
   postgres_data:

@@ -1,11 +1,12 @@
 'use client';
 
-import { useProposals } from '@/hooks/useProposals';
+import { useProposals, useUpdateProposal } from '@/hooks/useProposals';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatRelativeDate } from '@/lib/utils';
-import { Check, X, CheckCircle, Filter, Download } from 'lucide-react';
+import { Check, X, CheckCircle, Filter, Download, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 
 function StatusBadge({ status }: { status: string }) {
   const styles = {
@@ -26,34 +27,81 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function AdminProposalsPage() {
-  const { data, isLoading } = useProposals({ status: 'OPEN', limit: 50 });
+  const [filter, setFilter] = useState<'OPEN' | 'CLOSED' | 'ARCHIVED' | undefined>('OPEN');
+  const { data, isLoading, error, refetch } = useProposals({ status: filter, limit: 50 });
+  const { mutate: updateProposal, isPending } = useUpdateProposal();
+
+  const handleStatusChange = (proposalId: string, status: 'CLOSED' | 'ARCHIVED') => {
+    updateProposal({ proposalId, input: { status } }, {
+      onSuccess: () => refetch(),
+    });
+  };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-surface-base flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-surface-base flex items-center justify-center">
+        <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1 p-8 text-center">
+          <CheckCircle className="w-12 h-12 mx-auto text-error mb-4" />
+          <h2 className="text-xl font-bold text-on-surface mb-2">Failed to load proposals</h2>
+          <p className="text-on-surface-variant mb-4">Unable to fetch proposals</p>
+          <Button onClick={() => refetch()} className="rounded-full">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  const filters = [
+    { label: 'Open', value: 'OPEN' as const },
+    { label: 'Closed', value: 'CLOSED' as const },
+    { label: 'Archived', value: 'ARCHIVED' as const },
+    { label: 'All', value: undefined },
+  ];
+
   return (
     <div className="min-h-screen bg-surface-base p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-on-surface">Moderation Queue</h1>
             <p className="text-on-surface-variant mt-1">Review and manage submitted proposals</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="rounded-full">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
+            <Button variant="outline" className="rounded-full" onClick={() => refetch()}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
             </Button>
-            <Button className="rounded-full">
+            <Button className="rounded-full" disabled>
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {filters.map((f) => (
+            <button
+              key={f.label}
+              onClick={() => setFilter(f.value)}
+              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
+                filter === f.value
+                  ? 'bg-primary text-white shadow-elevation-1'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
 
         <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1 overflow-hidden">
@@ -76,21 +124,42 @@ export default function AdminProposalsPage() {
                       <div className="font-medium text-on-surface line-clamp-1">{proposal.title}</div>
                       <div className="text-xs text-on-surface-variant line-clamp-1">{proposal.description}</div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-on-surface-variant">{proposal.authorId}</td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant font-mono">
+                      {proposal.authorId.substring(0, 8)}...
+                    </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={proposal.status} />
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-on-surface">{proposal.voteCount}</td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant">{formatRelativeDate(proposal.createdAt)}</td>
                     <td className="px-6 py-4 space-x-2">
-                      <Button size="sm" variant="success" className="rounded-full">
-                        <Check className="w-3 h-3 mr-1" />
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="danger" className="rounded-full">
-                        <X className="w-3 h-3 mr-1" />
-                        Reject
-                      </Button>
+                      {proposal.status === 'OPEN' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="success"
+                            className="rounded-full"
+                            disabled={isPending}
+                            onClick={() => handleStatusChange(proposal.id, 'CLOSED')}
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            className="rounded-full"
+                            disabled={isPending}
+                            onClick={() => handleStatusChange(proposal.id, 'ARCHIVED')}
+                          >
+                            <X className="w-3 h-3 mr-1" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {proposal.status !== 'OPEN' && (
+                        <span className="text-xs text-on-surface-variant italic">No actions available</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -100,7 +169,7 @@ export default function AdminProposalsPage() {
           {(!data?.data || data.data.length === 0) && (
             <div className="text-center py-12">
               <CheckCircle className="w-12 h-12 mx-auto text-success mb-4" />
-              <p className="text-on-surface-variant">No proposals pending moderation</p>
+              <p className="text-on-surface-variant">No proposals found for this filter</p>
             </div>
           )}
         </Card>

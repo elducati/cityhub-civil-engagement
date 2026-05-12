@@ -53,11 +53,6 @@ export class UserRepository extends BaseRepository<User> {
     return this.create(input);
   }
 
-  async findByIds(ids: string[]): Promise<User[]> {
-    return this.db(this.tableName)
-      .select('id', 'email', 'name', 'role', 'created_at')
-      .whereIn('id', ids) as Promise<User[]>;
-  }
 }
 
 export const userRepository = new UserRepository();

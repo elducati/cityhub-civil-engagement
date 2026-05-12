@@ -3,28 +3,18 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config';
 import { initDatabase, getDatabase } from './config/database';
+import { getRedisClient } from './config/redis';
 import authRoutes from './routes/auth';
+import adminRoutes from './routes/admin';
 import proposalRoutes from './routes/proposals';
 import analyticsRoutes from './routes/analytics';
 import metricsRoutes from './routes/metrics';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { correlationIdMiddleware, requestLoggingMiddleware } from './middleware/correlationId';
-import { createClient, RedisClientType } from 'redis';
 import { connectToQueue } from './services/queueService';
 import { logger } from './services/logger';
 
 const app = express();
-
-let healthCheckRedisClient: RedisClientType | null = null;
-
-async function getOrCreateRedisClient(): Promise<RedisClientType> {
-  if (healthCheckRedisClient && healthCheckRedisClient.isOpen) {
-    return healthCheckRedisClient;
-  }
-  healthCheckRedisClient = createClient({ url: config.REDIS_URL });
-  await healthCheckRedisClient.connect();
-  return healthCheckRedisClient;
-}
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -54,8 +44,7 @@ async function initServices(): Promise<void> {
     initDatabase();
     logger.info('Database connected');
 
-    const redisClient = createClient({ url: config.REDIS_URL });
-    await redisClient.connect();
+    await getRedisClient();
     logger.info('Redis connected');
 
     try {
@@ -84,7 +73,7 @@ app.get('/api/health', async (_req: Request, res: Response) => {
   }
 
   try {
-    const redisClient = await getOrCreateRedisClient();
+    const redisClient = await getRedisClient();
     await redisClient.ping();
   } catch {
     services.redis = 'unhealthy';
@@ -98,6 +87,7 @@ app.get('/api/health', async (_req: Request, res: Response) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/proposals', proposalRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/metrics', metricsRoutes);

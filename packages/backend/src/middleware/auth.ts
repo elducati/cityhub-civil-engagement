@@ -26,6 +26,12 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   }
 }
 
+const ROLE_HIERARCHY: Record<string, number> = {
+  USER: 1,
+  MODERATOR: 2,
+  ADMIN: 3,
+};
+
 export function requireRole(...roles: Array<'USER' | 'MODERATOR' | 'ADMIN'>) {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -33,7 +39,15 @@ export function requireRole(...roles: Array<'USER' | 'MODERATOR' | 'ADMIN'>) {
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (roles.length === 0) {
+      next();
+      return;
+    }
+
+    const userLevel = ROLE_HIERARCHY[req.user.role] ?? 0;
+    const hasPermission = roles.some((role) => userLevel >= ROLE_HIERARCHY[role]);
+
+    if (!hasPermission) {
       res.status(403).json({ error: 'Forbidden', message: 'Insufficient permissions' });
       return;
     }

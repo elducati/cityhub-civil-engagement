@@ -1,20 +1,24 @@
-export type UserRole = 'USER' | 'MODERATOR' | 'ADMIN';
-
-export interface User {
+export interface AuthUser {
   id: string;
   email: string;
-  name?: string;
-  role: UserRole;
-  createdAt: string;
-}
-
-export interface AuthUser extends User {
+  role: string;
   token: string;
 }
 
-export interface SessionUser {
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export interface UserProfile {
   id: string;
   email: string;
-  role: UserRole;
-  name?: string;
+  role: string;
+  createdAt: string;
 }

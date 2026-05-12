@@ -1,49 +1,8 @@
 import { api } from './api';
+import type { Proposal, ProposalDetail, CreateProposalInput, UpdateProposalInput } from '@/types/proposal';
+import type { ProposalListResponse } from '@/types/api';
 
 export type ProposalStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
-
-export interface Proposal {
-  id: string;
-  title: string;
-  description: string;
-  authorId: string;
-  status: ProposalStatus;
-  voteCount: number;
-  createdAt: string;
-  updatedAt?: string;
-  userVote?: boolean;
-}
-
-export interface ProposalDetail extends Proposal {
-  author: {
-    id: string;
-    email: string;
-  };
-  userHasVoted: boolean;
-}
-
-export interface PaginationResult {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
-
-export interface ProposalListResponse {
-  data: Proposal[];
-  pagination: PaginationResult;
-}
-
-export interface CreateProposalInput {
-  title: string;
-  description: string;
-}
-
-export interface UpdateProposalInput {
-  title?: string;
-  description?: string;
-  status?: ProposalStatus;
-}
 
 export interface ProposalQueryParams {
   page?: number;
@@ -55,7 +14,7 @@ export interface ProposalQueryParams {
 
 export async function getProposals(params: ProposalQueryParams = {}): Promise<ProposalListResponse> {
   const queryParams = new URLSearchParams();
-  
+
   if (params.page) queryParams.set('page', String(params.page));
   if (params.limit) queryParams.set('limit', String(params.limit));
   if (params.status) queryParams.set('status', params.status);

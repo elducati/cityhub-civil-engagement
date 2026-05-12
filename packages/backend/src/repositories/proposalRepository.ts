@@ -103,9 +103,10 @@ export class ProposalRepository extends BaseRepository<Proposal> {
       .offset(offset);
 
     if (currentUserId) {
+      const db = this.db;
       query = query
         .leftJoin('votes as v', function() {
-          this.on('p.id', '=', 'v.proposal_id').andOn('v.user_id', '=', this.client.raw('?', [currentUserId]));
+          this.on('p.id', '=', 'v.proposal_id').andOn('v.user_id', '=', db.raw('?', [currentUserId]));
         })
         .select(
           'p.id',
@@ -126,11 +127,11 @@ export class ProposalRepository extends BaseRepository<Proposal> {
       id: row.id,
       title: row.title,
       description: row.description,
-      authorId: row.author_id,
+      author_id: row.author_id,
       status: row.status,
-      voteCount: row.vote_count,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
+      vote_count: row.vote_count,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
       userVote: currentUserId ? !!row.user_vote : false,
     }));
 
@@ -162,12 +163,6 @@ export class ProposalRepository extends BaseRepository<Proposal> {
       .join('users as u', 'p.author_id', 'u.id')
       .where('p.id', proposalId)
       .first() as Promise<ProposalWithAuthor | null>;
-  }
-
-  async findByAuthorId(authorId: string): Promise<Proposal[]> {
-    return this.db(this.tableName)
-      .where('author_id', authorId)
-      .orderBy('created_at', 'desc') as Promise<Proposal[]>;
   }
 
   async createProposal(input: CreateProposalInput): Promise<Proposal> {

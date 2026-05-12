@@ -38,29 +38,6 @@ export async function publishVoteMessage(message: VoteMessage): Promise<void> {
   }
 }
 
-export async function consumeVotes(
-  handler: (message: VoteMessage) => Promise<void>
-): Promise<void> {
-  if (!channel) {
-    await connectToQueue();
-  }
-
-  if (channel) {
-    await channel.consume(QUEUE_NAME, async (msg) => {
-      if (msg) {
-        try {
-          const content = JSON.parse(msg.content.toString()) as VoteMessage;
-          await handler(content);
-          channel?.ack(msg);
-        } catch (error) {
-          console.error('Error processing vote message:', error);
-          channel?.nack(msg, false, false);
-        }
-      }
-    });
-  }
-}
-
 export async function closeQueue(): Promise<void> {
   if (channel) {
     await channel.close();

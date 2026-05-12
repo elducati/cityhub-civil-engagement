@@ -1,7 +1,8 @@
 import { getDatabase } from '../config/database';
 import { createError } from '../middleware/errorHandler';
 import { createAuditLog } from './auditService';
-import { getCache, setCache, deleteCachePattern } from './cacheService';
+import { getCache, setCache, deleteCache } from './cacheService';
+import { proposalRepository } from '../repositories/proposalRepository';
 import type { PaginationResult } from '../types/express.d';
 
 export type ProposalStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
@@ -15,6 +16,7 @@ export interface Proposal {
   voteCount: number;
   createdAt: Date;
   updatedAt?: Date;
+  userVote?: boolean;
 }
 
 export interface CreateProposalInput {
@@ -28,24 +30,7 @@ export interface UpdateProposalInput {
   status?: ProposalStatus;
 }
 
-export async function getTrendingProposals(limit: number = 10): Promise<Proposal[]> {
-  const cacheKey = `proposals:trending:${limit}`;
-  const cached = await getCache<Proposal[]>(cacheKey);
-  if (cached) return cached;
-
-  const db = getDatabase();
-  const rows = await db('proposals')
-    .select('id', 'title', 'description', 'author_id', 'status', 'vote_count', 'created_at', 'updated_at')
-    .where('status', 'OPEN')
-    .orderBy('vote_count', 'desc')
-    .limit(limit);
-
-  const proposals = rows.map((row: ProposalRow) => mapRowToProposal(row as ProposalRow));
-  await setCache(cacheKey, proposals, 120);
-  return proposals;
-}
-
-interface ProposalRow {
+function mapRow(row: {
   id: string;
   title: string;
   description: string;
@@ -54,11 +39,8 @@ interface ProposalRow {
   vote_count: number;
   created_at: Date;
   updated_at: Date;
-  author_email?: string;
   user_vote?: boolean;
-}
-
-function mapRowToProposal(row: ProposalRow): Proposal {
+}): Proposal {
   return {
     id: row.id,
     title: row.title,
@@ -68,7 +50,19 @@ function mapRowToProposal(row: ProposalRow): Proposal {
     voteCount: row.vote_count,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    userVote: row.user_vote,
   };
+}
+
+export async function getTrendingProposals(limit: number = 10): Promise<Proposal[]> {
+  const cacheKey = `proposals:trending:${limit}`;
+  const cached = await getCache<Proposal[]>(cacheKey);
+  if (cached) return cached;
+
+  const rows = await proposalRepository.findTrending(limit);
+  const proposals = rows.map(r => mapRow({ ...r, user_vote: false }));
+  await setCache(cacheKey, proposals, 120);
+  return proposals;
 }
 
 export async function listProposals(
@@ -78,96 +72,19 @@ export async function listProposals(
     status?: ProposalStatus;
     sort?: 'createdAt' | 'voteCount';
     search?: string;
-    userId?: string;
   },
   currentUserId?: string
 ): Promise<{ data: Proposal[]; pagination: PaginationResult }> {
-  const db = getDatabase();
-  const page = Math.max(1, params.page || 1);
-  const limit = Math.min(100, Math.max(1, params.limit || 10));
-  const offset = (page - 1) * limit;
-  const isDescending = true;
+  const sort = params.sort === 'voteCount' ? 'vote_count' : 'created_at';
 
-  const cacheKey = `proposals:list:${page}:${limit}:${params.status || 'all'}:${params.sort || 'createdAt'}:${params.search || ''}`;
-  const cached = await getCache<{ data: Proposal[]; pagination: PaginationResult }>(cacheKey);
-  let proposals = cached ? [...cached.data] : [];
-  let total = cached ? cached.pagination.total : 0;
-
-  if (!cached) {
-    let query = db('proposals')
-      .select(
-        'proposals.id',
-        'proposals.title',
-        'proposals.description',
-        'proposals.author_id',
-        'proposals.status',
-        'proposals.vote_count',
-        'proposals.created_at',
-        'proposals.updated_at'
-      )
-      .orderBy(params.sort === 'voteCount' ? 'vote_count' : 'created_at', isDescending ? 'desc' : 'asc')
-      .limit(limit)
-      .offset(offset);
-
-    if (params.status) {
-      query = query.where('status', params.status);
-    }
-
-    if (params.search) {
-      query = query.whereRaw(
-        "to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')) @@ plainto_tsquery('english', ?)",
-        [params.search]
-      );
-    }
-
-    let countQuery = db('proposals').count('id as total');
-    if (params.status) {
-      countQuery = countQuery.where('status', params.status);
-    }
-    const countResult = await countQuery.first();
-    total = parseInt(String(countResult?.total || 0), 10);
-
-    const rows = await query;
-
-    proposals = rows.map((row: ProposalRow) => mapRowToProposal(row as ProposalRow));
-
-    const result = {
-      data: proposals,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-
-    await setCache(cacheKey, result, 60);
-  }
-
-  if (currentUserId && proposals.length > 0) {
-    const proposalIds = proposals.map((p) => p.id);
-    const votes = await db('votes')
-      .select('proposal_id')
-      .whereIn('proposal_id', proposalIds)
-      .where('user_id', currentUserId);
-
-    const votedIds = new Set(votes.map((v) => v.proposal_id));
-    proposals = proposals.map((p) => ({
-      ...p,
-      userVote: votedIds.has(p.id),
-    }));
-  } else {
-    proposals = proposals.map((p) => ({ ...p, userVote: false }));
-  }
+  const result = await proposalRepository.findPaginated(
+    { ...params, sort },
+    currentUserId
+  );
 
   return {
-    data: proposals,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
+    data: result.data.map(r => mapRow(r)),
+    pagination: result.pagination,
   };
 }
 
@@ -175,16 +92,7 @@ export async function getProposalById(
   proposalId: string,
   currentUserId?: string
 ): Promise<Proposal & { author: { id: string; email: string }; userHasVoted: boolean }> {
-  const db = getDatabase();
-
-  const row = await db('proposals')
-    .select(
-      'proposals.*',
-      'users.email as author_email'
-    )
-    .join('users', 'proposals.author_id', 'users.id')
-    .where('proposals.id', proposalId)
-    .first();
+  const row = await proposalRepository.findByIdWithAuthor(proposalId);
 
   if (!row) {
     throw createError('Proposal not found', 404);
@@ -192,6 +100,7 @@ export async function getProposalById(
 
   let userHasVoted = false;
   if (currentUserId) {
+    const db = getDatabase();
     const vote = await db('votes')
       .where('proposal_id', proposalId)
       .where('user_id', currentUserId)
@@ -200,14 +109,7 @@ export async function getProposalById(
   }
 
   return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    authorId: row.author_id,
-    status: row.status,
-    voteCount: row.vote_count,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    ...mapRow({ ...row, user_vote: false }),
     author: {
       id: row.author_id,
       email: row.author_email,
@@ -220,17 +122,11 @@ export async function createProposal(
   input: CreateProposalInput,
   authorId: string
 ): Promise<Proposal> {
-  const db = getDatabase();
-
-  const [proposal] = await db('proposals')
-    .insert({
-      title: input.title,
-      description: input.description,
-      author_id: authorId,
-      status: 'OPEN',
-      vote_count: 0,
-    })
-    .returning(['id', 'title', 'description', 'author_id', 'status', 'vote_count', 'created_at', 'updated_at']);
+  const proposal = await proposalRepository.createProposal({
+    title: input.title,
+    description: input.description,
+    author_id: authorId,
+  });
 
   await createAuditLog({
     userId: authorId,
@@ -240,9 +136,9 @@ export async function createProposal(
     metadata: { title: proposal.title },
   });
 
-  await deleteCachePattern('proposals:*');
+  await deleteCache(`proposals:trending:10`);
 
-  return mapRowToProposal(proposal as ProposalRow);
+  return mapRow({ ...proposal, user_vote: false });
 }
 
 export async function updateProposal(
@@ -251,9 +147,7 @@ export async function updateProposal(
   userId: string,
   userRole: string
 ): Promise<Proposal> {
-  const db = getDatabase();
-
-  const existing = await db('proposals').where('id', proposalId).first();
+  const existing = await proposalRepository.findById(proposalId);
   if (!existing) {
     throw createError('Proposal not found', 404);
   }
@@ -267,10 +161,7 @@ export async function updateProposal(
   if (input.description !== undefined) updateData.description = input.description;
   if (input.status !== undefined) updateData.status = input.status;
 
-  const [proposal] = await db('proposals')
-    .where('id', proposalId)
-    .update(updateData)
-    .returning(['id', 'title', 'description', 'author_id', 'status', 'vote_count', 'created_at', 'updated_at']);
+  const proposal = await proposalRepository.update(proposalId, updateData);
 
   await createAuditLog({
     userId,
@@ -280,9 +171,9 @@ export async function updateProposal(
     metadata: updateData,
   });
 
-  await deleteCachePattern('proposals:*');
+  await deleteCache(`proposals:trending:10`);
 
-  return mapRowToProposal(proposal as ProposalRow);
+  return mapRow({ ...(proposal || existing), user_vote: false });
 }
 
 export async function deleteProposal(
@@ -290,9 +181,7 @@ export async function deleteProposal(
   userId: string,
   userRole: string
 ): Promise<void> {
-  const db = getDatabase();
-
-  const existing = await db('proposals').where('id', proposalId).first();
+  const existing = await proposalRepository.findById(proposalId);
   if (!existing) {
     throw createError('Proposal not found', 404);
   }
@@ -301,7 +190,7 @@ export async function deleteProposal(
     throw createError('Not authorized to delete this proposal', 403);
   }
 
-  await db('proposals').where('id', proposalId).del();
+  await proposalRepository.delete(proposalId);
 
   await createAuditLog({
     userId,
@@ -311,5 +200,5 @@ export async function deleteProposal(
     metadata: { title: existing.title },
   });
 
-  await deleteCachePattern('proposals:*');
+  await deleteCache(`proposals:trending:10`);
 }

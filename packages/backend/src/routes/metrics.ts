@@ -5,17 +5,7 @@ const router = Router();
 const httpRequestsTotal = new Map<string, number>();
 const httpRequestDurationMs = new Map<string, number[]>();
 
-export function recordHttpRequest(method: string, path: string, statusCode: number, durationMs: number): void {
-  const key = `${method}:${path}`;
-  httpRequestsTotal.set(key, (httpRequestsTotal.get(key) || 0) + 1);
-
-  const durations = httpRequestDurationMs.get(key) || [];
-  durations.push(durationMs);
-  if (durations.length > 100) durations.shift();
-  httpRequestDurationMs.set(key, durations);
-}
-
-export function getAverageDuration(key: string): number {
+function getAverageDuration(key: string): number {
   const durations = httpRequestDurationMs.get(key) || [];
   if (durations.length === 0) return 0;
   return durations.reduce((a, b) => a + b, 0) / durations.length;

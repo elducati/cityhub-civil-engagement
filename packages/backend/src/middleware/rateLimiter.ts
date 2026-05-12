@@ -1,18 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { createClient, RedisClientType } from 'redis';
-import { config } from '../config';
-
-let redisClient: RedisClientType | null = null;
-
-async function getRedisClient(): Promise<RedisClientType> {
-  if (redisClient && redisClient.isOpen) {
-    return redisClient;
-  }
-
-  redisClient = createClient({ url: config.REDIS_URL });
-  await redisClient.connect();
-  return redisClient;
-}
+import { getRedisClient } from '../config/redis';
+import { logger } from '../services/logger';
 
 interface RateLimitConfig {
   windowMs: number;
@@ -54,15 +42,8 @@ export function rateLimiter(type: keyof typeof defaultConfigs = 'api') {
 
       next();
     } catch (error) {
-      console.error('Rate limiter error:', error);
+      logger.error({ error }, 'Rate limiter error');
       next();
     }
   };
-}
-
-export async function closeRateLimiter(): Promise<void> {
-  if (redisClient && redisClient.isOpen) {
-    await redisClient.quit();
-    redisClient = null;
-  }
 }

@@ -1,5 +1,12 @@
 node_modules/
 dist/
+.next/
+playwright-report/
+test-results/
+*.test.js
+*.test.js.map
+*.test.d.ts
+*.test.d.ts.map
 coverage/
 .env
 .env.local

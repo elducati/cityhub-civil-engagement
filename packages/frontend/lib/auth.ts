@@ -1,29 +1,5 @@
 import { api } from './api';
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterData {
-  email: string;
-  password: string;
-  name?: string;
-}
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  role: string;
-  token: string;
-}
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  role: string;
-  createdAt: string;
-}
+import type { LoginCredentials, RegisterData, AuthUser, UserProfile } from '@/types/user';
 
 export async function login(credentials: LoginCredentials): Promise<AuthUser> {
   const response = await api.post<AuthUser>('/api/auth/login', credentials);

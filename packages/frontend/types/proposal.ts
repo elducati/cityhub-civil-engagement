@@ -1,11 +1,9 @@
-export type ProposalStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
-
 export interface Proposal {
   id: string;
   title: string;
   description: string;
   authorId: string;
-  status: ProposalStatus;
+  status: 'OPEN' | 'CLOSED' | 'ARCHIVED';
   voteCount: number;
   createdAt: string;
   updatedAt?: string;
@@ -28,12 +26,5 @@ export interface CreateProposalInput {
 export interface UpdateProposalInput {
   title?: string;
   description?: string;
-  status?: ProposalStatus;
-}
-
-export interface ProposalFormData {
-  title: string;
-  description: string;
-  category: string;
-  tags: string[];
+  status?: 'OPEN' | 'CLOSED' | 'ARCHIVED';
 }

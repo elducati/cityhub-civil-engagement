@@ -12,7 +12,7 @@ const Avatar = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<t
 );
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
-Avatar.Image = AvatarImage;
-Avatar.Fallback = AvatarFallback;
+(Avatar as any).Image = AvatarImage;
+(Avatar as any).Fallback = AvatarFallback;
 
 export { Avatar, AvatarImage, AvatarFallback };

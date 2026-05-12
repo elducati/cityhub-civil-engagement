@@ -1,8 +1,9 @@
 import { getDatabase } from '../config/database';
 import { createError } from '../middleware/errorHandler';
 import { createAuditLog } from './auditService';
-import { checkUserVoted, setUserVoted, removeUserVote, incrementVoteBuffer, deleteCachePattern } from './cacheService';
+import { checkUserVoted, setUserVoted, removeUserVote, incrementVoteBuffer, deleteCache } from './cacheService';
 import { publishVoteMessage } from './queueService';
+import { proposalRepository } from '../repositories/proposalRepository';
 
 export async function castVote(proposalId: string, userId: string): Promise<{
   proposalId: string;
@@ -10,8 +11,8 @@ export async function castVote(proposalId: string, userId: string): Promise<{
   userVoted: boolean;
 }> {
   const db = getDatabase();
+  const proposal = await proposalRepository.findById(proposalId);
 
-  const proposal = await db('proposals').where('id', proposalId).first();
   if (!proposal) {
     throw createError('Proposal not found', 404);
   }
@@ -29,6 +30,10 @@ export async function castVote(proposalId: string, userId: string): Promise<{
     throw createError('Already voted on this proposal', 409);
   }
 
+  if (typeof proposal.vote_count !== 'number') {
+    (proposal as any).vote_count = 0;
+  }
+
   const existingVote = await db('votes')
     .where('proposal_id', proposalId)
     .where('user_id', userId)
@@ -43,8 +48,7 @@ export async function castVote(proposalId: string, userId: string): Promise<{
     user_id: userId,
   });
 
-  await db('proposals').where('id', proposalId).increment('vote_count', 1);
-
+  await proposalRepository.incrementVoteCount(proposalId);
   await setUserVoted(userId, proposalId);
   await incrementVoteBuffer(proposalId);
 
@@ -62,13 +66,13 @@ export async function castVote(proposalId: string, userId: string): Promise<{
     entityId: proposalId,
   });
 
-  await deleteCachePattern('proposals:*');
+  await deleteCache('proposals:trending:10');
 
-  const updatedProposal = await db('proposals').where('id', proposalId).first();
+  const updated = await proposalRepository.findById(proposalId);
 
   return {
     proposalId,
-    voteCount: updatedProposal?.vote_count || 0,
+    voteCount: updated?.vote_count || 0,
     userVoted: true,
   };
 }
@@ -79,8 +83,8 @@ export async function removeVote(proposalId: string, userId: string): Promise<{
   userVoted: boolean;
 }> {
   const db = getDatabase();
+  const proposal = await proposalRepository.findById(proposalId);
 
-  const proposal = await db('proposals').where('id', proposalId).first();
   if (!proposal) {
     throw createError('Proposal not found', 404);
   }
@@ -95,8 +99,7 @@ export async function removeVote(proposalId: string, userId: string): Promise<{
   }
 
   await db('votes').where('id', vote.id).del();
-  await db('proposals').where('id', proposalId).decrement('vote_count', 1);
-
+  await proposalRepository.decrementVoteCount(proposalId);
   await removeUserVote(userId, proposalId);
 
   await publishVoteMessage({
@@ -113,13 +116,13 @@ export async function removeVote(proposalId: string, userId: string): Promise<{
     entityId: proposalId,
   });
 
-  await deleteCachePattern('proposals:*');
+  await deleteCache('proposals:trending:10');
 
-  const updatedProposal = await db('proposals').where('id', proposalId).first();
+  const updated = await proposalRepository.findById(proposalId);
 
   return {
     proposalId,
-    voteCount: Math.max(0, updatedProposal?.vote_count || 0),
+    voteCount: Math.max(0, updated?.vote_count || 0),
     userVoted: false,
   };
 }

@@ -1,24 +1,4 @@
-import { createClient, RedisClientType } from 'redis';
-import { config } from '../config';
-
-let redisClient: RedisClientType | null = null;
-
-export async function getRedisClient(): Promise<RedisClientType> {
-  if (redisClient && redisClient.isOpen) {
-    return redisClient;
-  }
-
-  redisClient = createClient({ url: config.REDIS_URL });
-  await redisClient.connect();
-  return redisClient;
-}
-
-export async function closeRedis(): Promise<void> {
-  if (redisClient && redisClient.isOpen) {
-    await redisClient.quit();
-    redisClient = null;
-  }
-}
+import { getRedisClient } from '../config/redis';
 
 export async function getCache<T>(key: string): Promise<T | null> {
   const client = await getRedisClient();
@@ -40,14 +20,15 @@ export async function deleteCache(key: string): Promise<void> {
 export async function deleteCachePattern(pattern: string): Promise<void> {
   const client = await getRedisClient();
   let cursor = '0';
-  
+
   do {
-    const [newCursor, keys] = await client.scan(cursor, {
+    const scanResult = await client.scan(cursor, {
       MATCH: pattern,
       COUNT: 100,
     });
-    cursor = newCursor;
-    
+    cursor = scanResult.cursor;
+    const keys = scanResult.keys;
+
     if (keys.length > 0) {
       await client.del(keys);
     }

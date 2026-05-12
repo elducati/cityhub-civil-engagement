@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { login as loginApi, register as registerApi, logout as logoutApi, getCurrentUser, type LoginCredentials, type RegisterData, type UserProfile, isAuthenticated as checkAuth } from '@/lib/auth';
+import { login as loginApi, register as registerApi, logout as logoutApi, getCurrentUser } from '@/lib/auth';
+import type { LoginCredentials, RegisterData, UserProfile } from '@/types/user';
 
 interface UseAuthState {
   user: UserProfile | null;
@@ -27,7 +28,7 @@ export function useAuth() {
         isAuthenticated: !!user,
         error: null,
       });
-    } catch (error) {
+    } catch {
       setState({
         user: null,
         isLoading: false,
@@ -95,7 +96,7 @@ export function useAuth() {
         isAuthenticated: false,
         error: null,
       });
-    } catch (error) {
+    } catch {
       setState(prev => ({
         ...prev,
         isLoading: false,

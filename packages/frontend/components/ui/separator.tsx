@@ -3,7 +3,7 @@ import * as SeparatorPrimitive from '@radix-ui/react-separator';
 import { cn } from '@/lib/utils';
 
 const Separator = React.forwardRef<
-  HTMLElement,
+  HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>
 >(({ className, orientation = 'horizontal', ...props }, ref) => (
   <SeparatorPrimitive.Root

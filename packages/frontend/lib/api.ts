@@ -1,5 +1,3 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
 export interface ApiError {
   error: string;
   message: string;
@@ -7,11 +5,13 @@ export interface ApiError {
 }
 
 class ApiClient {
-  private baseUrl: string;
   private authToken: string | null = null;
 
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
+  private getBaseUrl(): string {
+    if (typeof window === 'undefined') {
+      return process.env.API_URL_FOR_SERVER || 'http://api:3000';
+    }
+    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   }
 
   setAuthToken(token: string | null) {
@@ -46,24 +46,36 @@ class ApiClient {
       ...options.headers,
     };
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        error: 'Unknown Error',
-        message: 'An unexpected error occurred',
-      }));
-      throw new Error(error.message || error.error);
+    try {
+      const response = await fetch(`${this.getBaseUrl()}${endpoint}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const error: ApiError = await response.json().catch(() => ({
+          error: 'Unknown Error',
+          message: 'An unexpected error occurred',
+        }));
+        throw new Error(error.message || error.error);
+      }
+
+      if (response.status === 204) {
+        return {} as T;
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timed out. Please try again.');
+      }
+      throw error;
     }
-
-    if (response.status === 204) {
-      return {} as T;
-    }
-
-    return response.json();
   }
 
   async get<T>(endpoint: string): Promise<T> {
@@ -89,4 +101,4 @@ class ApiClient {
   }
 }
 
-export const api = new ApiClient(API_BASE);
+export const api = new ApiClient();

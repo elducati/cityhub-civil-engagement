@@ -73,6 +73,7 @@ export default function RegisterPage() {
                       name="name"
                       type="text"
                       autoComplete="name"
+                      required
                       placeholder="John Doe"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
