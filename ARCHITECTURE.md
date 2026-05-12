@@ -9,7 +9,7 @@
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        WEB[React + Vite<br/>localhost:5173]
+        WEB[Next.js 14 App Router<br/>localhost:5173]
     end
 
     subgraph "API Gateway Layer"
@@ -23,6 +23,7 @@ graph TB
         PROP[Proposal Service<br/>CRUD]
         VOTE[Voting Service<br/>Cast/Remove]
         ANAL[Analytics Service<br/>Stats]
+        ADM[Admin Service<br/>Dashboard/Users/Audit]
     end
 
     subgraph "Cache Layer"
@@ -31,7 +32,6 @@ graph TB
 
     subgraph "Queue Layer"
         QM[RabbitMQ 3.13<br/>:5672]
-        VW[Vote Worker<br/>Async Processor]
     end
 
     subgraph "Data Layer"
@@ -45,15 +45,16 @@ graph TB
     RL --> PROP
     RL --> VOTE
     RL --> ANAL
+    RL --> ADM
 
     AUTH --> PG
     PROP --> PG
-    VOTE -->|"Buffer votes"| RC
-    VOTE -->|"Async write"| QM
-    VW --> RC
-    VW --> PG
+    VOTE --> RC
+    VOTE --> PG
     ANAL --> RC
     ANAL --> PG
+    ADM --> PG
+    ADM --> RC
 ```
 
 ### Request Flow Summary
@@ -71,8 +72,6 @@ Client Request
     ↓
 [Database - PostgreSQL] ← Persistent storage
     ↓
-[Async Queue - RabbitMQ] ← Vote processing
-    ↓
 Response
 ```
 
@@ -84,18 +83,20 @@ Response
 |-------|--------|---------|--------|
 | **Runtime** | Node.js | 20.14.0 | LTS, enterprise-ready, large ecosystem |
 | **Backend Framework** | Express | ^4.18.x | Fast iteration, minimal boilerplate, easy NestJS migration |
-| **Frontend Framework** | React | ^18.2.x | Component-based, mature ecosystem, easy Next.js migration |
-| **Build Tool** | Vite | ^5.x | Fast HMR, optimized builds |
+| **Frontend Framework** | Next.js | 14.2.3 | App Router, SSR/ISR, built-in API proxying |
 | **Language** | TypeScript | ^5.x | Type safety, better DX |
-| **Database** | PostgreSQL | 16.x | ACID compliance, JSON/JSONB, GIN indexes, rich query planner |
+| **Database** | PostgreSQL | 16.x | ACID compliance, JSON/JSONB, GIN indexes |
 | **Cache** | Redis | 7.x | Sub-millisecond latency, pub/sub, TTL support |
-| **Queue** | RabbitMQ | 3.13.x | Reliable delivery, exchange routing, management UI |
-| **Authentication** | JWT | RS256 | Stateless, scalable,Industry standard |
-| **Password Hashing** | bcrypt | ^5.x | Adaptive cost, battle-tested |
+| **Queue** | RabbitMQ | 3.13.x | Reliable delivery, management UI |
+| **Authentication** | JWT | RS256 | Stateless, scalable, industry standard |
+| **Password Hashing** | bcryptjs | ^2.4.x | Adaptive cost, battle-tested |
 | **Validation** | Zod | ^3.x | TypeScript-first, composable schemas |
-| **ORM** | Knex.js | ^2.x | Query builder, migration support, SQL visibility |
-| **Frontend State** | React Query | ^5.x | Server state caching, optimistic updates |
-| **Styling** | Tailwind CSS | ^3.x | Utility-first, small bundle |
+| **Query Builder** | Knex.js | ^3.x | SQL visibility, migration support |
+| **Server State** | TanStack Query | ^5.x | Client-side caching, auto-invalidation |
+| **UI State** | Zustand | ^4.x | Lightweight client state |
+| **Forms** | React Hook Form | ^7.x | Performant form handling |
+| **Styling** | Tailwind CSS | ^3.x | Utility-first, Material Design 3 theme |
+| **Components** | Radix UI | latest | Accessible, headless primitives |
 | **Deployment** | Docker Compose | Latest | Local dev, K8s-ready for prod |
 
 ---
@@ -106,8 +107,9 @@ Response
 
 ```sql
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255),
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL DEFAULT 'USER' CHECK (role IN ('USER', 'MODERATOR', 'ADMIN')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -122,7 +124,7 @@ CREATE INDEX idx_users_role ON users(role);
 
 ```sql
 CREATE TABLE proposals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(500) NOT NULL,
     description TEXT NOT NULL,
     author_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
@@ -136,16 +138,13 @@ CREATE INDEX idx_proposals_status ON proposals(status);
 CREATE INDEX idx_proposals_created_at ON proposals(created_at DESC);
 CREATE INDEX idx_proposals_vote_count ON proposals(vote_count DESC);
 CREATE INDEX idx_proposals_author_id ON proposals(author_id);
-
--- Full-text search index
-CREATE INDEX idx_proposals_fts ON proposals USING GIN (to_tsvector('english', title || ' ' || description));
 ```
 
 ### 3.3 Votes Table
 
 ```sql
 CREATE TABLE votes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     proposal_id UUID NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -160,7 +159,7 @@ CREATE INDEX idx_votes_user_id ON votes(user_id);
 
 ```sql
 CREATE TABLE audit_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     action VARCHAR(50) NOT NULL,
     entity_type VARCHAR(50) NOT NULL,
@@ -198,222 +197,97 @@ CREATE TRIGGER update_proposals_updated_at BEFORE UPDATE ON proposals
 
 ### 4.1 Authentication
 
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/auth/register` | Public | Register new user |
+| POST | `/api/auth/login` | Public | Login, returns JWT |
+| GET | `/api/auth/me` | Bearer | Get current user profile |
+
 #### POST /api/auth/register
-- **Auth**: Public
-- **Request Body**:
-```json
-{
-  "email": "string (valid email)",
-  "password": "string (min 8 chars)",
-  "role": "string (optional, default USER)"
-}
-```
-- **Response** (201):
-```json
-{
-  "id": "uuid",
-  "email": "string",
-  "role": "USER",
-  "token": "jwt-token"
-}
-```
+- **Request Body**: `{ email: string, password: string (min 6), name?: string, role?: string }`
+- **Response** (201): `{ id: uuid, email: string, role: string, token: jwt }`
 
 #### POST /api/auth/login
-- **Auth**: Public
-- **Request Body**:
-```json
-{
-  "email": "string",
-  "password": "string"
-}
-```
-- **Response** (200):
-```json
-{
-  "id": "uuid",
-  "email": "string",
-  "role": "USER",
-  "token": "jwt-token"
-}
-```
+- **Request Body**: `{ email: string, password: string }`
+- **Response** (200): `{ id: uuid, email: string, role: string, token: jwt }`
 
 #### GET /api/auth/me
-- **Auth**: Protected (Bearer token)
-- **Response** (200):
-```json
-{
-  "id": "uuid",
-  "email": "string",
-  "role": "USER",
-  "createdAt": "ISO8601"
-}
-```
+- **Response** (200): `{ id: uuid, email: string, role: string, createdAt: ISO8601 }`
 
 ### 4.2 Proposals
 
-#### GET /api/proposals
-- **Auth**: Public
-- **Query Params**: `page` (default 1), `limit` (default 10, max 100), `status` (optional), `sort` (createdAt|voteCount)
-- **Response** (200):
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "title": "string",
-      "description": "string",
-      "authorId": "uuid",
-      "status": "OPEN",
-      "voteCount": 10,
-      "createdAt": "ISO8601",
-      "userVote": true
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 100,
-    "totalPages": 10
-  }
-}
-```
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/proposals/trending` | Public | Trending proposals (cached) |
+| GET | `/api/proposals` | Optional | Paginated list with filters |
+| GET | `/api/proposals/:id` | Optional | Proposal detail with author |
+| POST | `/api/proposals` | Bearer | Create proposal |
+| PUT | `/api/proposals/:id` | Bearer | Update (owner/MOD+) |
+| DELETE | `/api/proposals/:id` | Bearer | Delete (owner/MOD+) |
+| POST | `/api/proposals/:id/vote` | Bearer | Cast vote |
+| DELETE | `/api/proposals/:id/vote` | Bearer | Remove vote |
 
-#### GET /api/proposals/:id
-- **Auth**: Public
+#### GET /api/proposals
+- **Query Params**: `page` (1), `limit` (10, max 100), `status` (OPEN/CLOSED/ARCHIVED), `sort` (createdAt/voteCount), `search` (full-text)
 - **Response** (200):
 ```json
 {
-  "id": "uuid",
-  "title": "string",
-  "description": "string",
-  "author": { "id": "uuid", "email": "string" },
-  "status": "OPEN",
-  "voteCount": 10,
-  "createdAt": "ISO8601",
-  "userHasVoted": false
+  "data": [{ "id": "uuid", "title": "string", "authorId": "uuid", "status": "OPEN", "voteCount": 10, "createdAt": "ISO8601", "userVote": true }],
+  "pagination": { "page": 1, "limit": 10, "total": 100, "totalPages": 10 }
 }
 ```
 
 #### POST /api/proposals
-- **Auth**: Protected
-- **Request Body**:
-```json
-{
-  "title": "string (3-500 chars)",
-  "description": "string (10-10000 chars)"
-}
-```
-- **Response** (201):
-```json
-{
-  "id": "uuid",
-  "title": "string",
-  "description": "string",
-  "status": "OPEN",
-  "voteCount": 0,
-  "createdAt": "ISO8601"
-}
-```
-
-#### PUT /api/proposals/:id
-- **Auth**: Protected (author only)
-- **Request Body**:
-```json
-{
-  "title": "string (optional)",
-  "description": "string (optional)",
-  "status": "OPEN|CLOSED (optional)"
-}
-```
-- **Response** (200):
-```json
-{
-  "id": "uuid",
-  "title": "string",
-  "description": "string",
-  "status": "CLOSED",
-  "voteCount": 10,
-  "updatedAt": "ISO8601"
-}
-```
-
-#### DELETE /api/proposals/:id
-- **Auth**: Protected (author or MODERATOR/ADMIN)
-- **Response** (204): No content
+- **Request Body**: `{ title: string (3-500), description: string (10-10000) }`
+- **Response** (201): `{ id, title, description, authorId, status: "OPEN", voteCount: 0, createdAt }`
 
 ### 4.3 Voting
 
 #### POST /api/proposals/:id/vote
-- **Auth**: Protected
-- **Response** (201):
-```json
-{
-  "proposalId": "uuid",
-  "voteCount": 11,
-  "userVoted": true
-}
-```
+- **Response** (201): `{ proposalId: uuid, voteCount: number, userVoted: true }`
 
 #### DELETE /api/proposals/:id/vote
-- **Auth**: Protected
+- **Response** (200): `{ proposalId: uuid, voteCount: number, userVoted: false }`
+
+### 4.4 Admin
+
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| GET | `/api/admin/dashboard` | ADMIN, MODERATOR | Platform stats + trends |
+| GET | `/api/admin/users` | ADMIN | Paginated user list |
+| PUT | `/api/admin/users/:id/role` | ADMIN | Change user role |
+| GET | `/api/admin/audit-logs` | ADMIN | Paginated audit trail |
+| GET | `/api/analytics/proposals` | ADMIN | Proposal analytics |
+| GET | `/api/analytics/voting` | ADMIN | Voting analytics |
+
+#### GET /api/admin/dashboard
 - **Response** (200):
 ```json
 {
-  "proposalId": "uuid",
-  "voteCount": 10,
-  "userVoted": false
-}
-```
-
-### 4.4 Analytics
-
-#### GET /api/analytics/proposals
-- **Auth**: Protected (ADMIN only)
-- **Response** (200):
-```json
-{
-  "total": 100,
-  "byStatus": {
-    "OPEN": 80,
-    "CLOSED": 15,
-    "ARCHIVED": 5
-  },
-  "thisMonth": 25,
-  "lastMonth": 20
-}
-```
-
-#### GET /api/analytics/voting
-- **Auth**: Protected (ADMIN only)
-- **Response** (200):
-```json
-{
-  "totalVotes": 500,
-  "uniqueVoters": 200,
-  "turnoutRate": 0.45,
-  "votesByProposal": [
-    { "proposalId": "uuid", "votes": 50 },
-    { "proposalId": "uuid", "votes": 30 }
-  ]
+  "totalUsers": 100,
+  "totalProposals": 250,
+  "totalVotes": 1200,
+  "engagementRate": 0.45,
+  "proposalsByStatus": { "OPEN": 80, "CLOSED": 15, "ARCHIVED": 5 },
+  "usersByRole": { "USER": 90, "MODERATOR": 8, "ADMIN": 2 },
+  "thisMonthProposals": 25,
+  "lastMonthProposals": 20,
+  "recentActivity": [{ "id": "uuid", "action": "CREATE", "entityType": "proposal", "userId": "uuid", "createdAt": "ISO8601" }]
 }
 ```
 
 ### 4.5 Health Check
 
 #### GET /api/health
-- **Auth**: Public
 - **Response** (200):
 ```json
-{
-  "status": "ok",
-  "timestamp": "ISO8601",
-  "services": {
-    "postgres": "healthy",
-    "redis": "healthy",
-    "rabbitmq": "healthy"
-  }
-}
+{ "status": "ok", "timestamp": "ISO8601", "services": { "postgres": "healthy", "redis": "healthy", "rabbitmq": "healthy" } }
 ```
+
+### 4.6 Metrics
+
+#### GET /metrics
+- **Response** (200, text/plain): Prometheus-style metrics (request counts, durations, memory, uptime)
 
 ---
 
@@ -422,91 +296,76 @@ CREATE TRIGGER update_proposals_updated_at BEFORE UPDATE ON proposals
 ### 5.1 Page Map
 
 | Route | Page | Auth | Description |
-|-------|------|------|--------------|
-| `/` | Home | Public | Landing page with trending proposals |
+|-------|------|------|-------------|
+| `/` | Home | Public | Landing page with hero, stats, trending proposals |
 | `/login` | Login | Guest | Login form |
 | `/register` | Register | Guest | Registration form |
-| `/proposals` | Proposals List | Public | Paginated proposal list with filters |
-| `/proposals/:id` | Proposal Detail | Public | Full proposal with vote UI |
-| `/proposals/new` | Create Proposal | User | New proposal form |
-| `/dashboard` | Dashboard | User | User's proposals and votes |
-| `/admin` | Admin Panel | ADMIN | Analytics and moderation |
+| `/proposals` | Proposals List | Public | Paginated list with status filters |
+| `/proposals/:id` | Proposal Detail | Public | Full proposal with vote button |
+| `/proposals/create` | Create Proposal | User | Multi-step proposal form |
+| `/dashboard` | Dashboard | User | Personal overview |
+| `/admin` | Admin Dashboard | ADMIN/MOD | Platform stats and engagement |
+| `/admin/proposals` | Moderation Queue | ADMIN/MOD | Proposal approve/reject |
+| `/admin/users` | User Management | ADMIN | Role management |
+| `/admin/audit-logs` | Audit Logs | ADMIN | Immutable action trail |
 
 ### 5.2 Component Hierarchy (Atomic Design)
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    ATOMS                                 │
-├──────────────────────────────────────────────────────��─��┤
-│ Button        │ Primary, Secondary, Ghost variants    │
-│ Input         │ Text, Email, Password, Textarea         │
-│ Card          │ Proposal card with vote count          │
-│ Badge         │ Status badges (OPEN/CLOSED)            │
-│ Avatar        │ User avatar with role indicator       │
-│ Spinner       │ Loading states                        │
-│ Alert         │ Success, Error, Warning messages     │
-└─────────────────────────────────────────────────────────┘
+ATOMS
+  Button          — Primary, Secondary, Outline, Ghost, Success, Danger, Warning
+  Input           — Text, Email, Password
+  Card            — Container with CardHeader, CardContent, CardFooter
+  Badge           — Status indicators with variant colors
+  Avatar          — User avatar with fallback initials
+  Label           — Form label
+  Separator       — Radix UI divider
 
-┌─────────────────────────────────────────────────────────┐
-│                   MOLECULES                              │
-├─────────────────────────────────────────────────────────┤
-│ FormField    │ Input + Label + Error message          │
-│ ProposalCard │ Card + Title + Description + Votes    │
-│ VoteButton   │ Button + Counter + User state         │
-│ SearchBar    │ Input + Icon + Clear button            │
-│ Pagination   │ Page numbers + Prev/Next               │
-│ FilterBar    │ Status filter + Sort dropdown         │
-└─────────────────────────────────────────────────────────┘
+MOLECULES
+  StatusChip      — Badge + status styling (OPEN/CLOSED/ARCHIVED)
+  VoteCounter     — Vote count display
+  ProposalForm    — Multi-step form (react-hook-form + zod)
+  NavBar          — Navigation with auth state
 
-┌─────────────────────────────────────────────────────────┐
-│                   ORGANISMS                             │
-├─────────────────────────────────────────────────────────┤
-│ ProposalList │ FilterBar + SearchBar + Card list     │
-│ Navigation   │ Logo + Nav links + Auth buttons       │
-│ AuthForm     │ FormFields + Button + Error display  │
-│ ProposalDetail│ Title + Description + VoteButton    │
-│ Dashboard    │ Stats + User's proposals + Votes      │
-│ AdminPanel   │ Analytics charts + Moderation list   │
-└─────────────────────────────────────────────────────────┘
+ORGANISMS
+  AdminLayout     — Sidebar + content with role-gated nav items
+  DashboardCards  — Stat cards with trend indicators
+  UserTable       — Paginated table with role dropdown
+  AuditLogTable   — Paginated audit log viewer
+  ProposalTable   — Moderation queue with approve/reject buttons
 
-┌─────────────────────────────────────────────────────────┐
-│                   TEMPLATES                              │
-├─────────────────────────────────────────────────────────┤
-│ PageLayout   │ Navigation + Outlet + Footer           │
-│ DashboardLayout│ Sidebar + Header + Content area     │
-│ AuthLayout   │ Centered card with branding           │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│                    PAGES                                │
-├─────────────────────────────────────────────────────────┤
-│ HomePage     │ PageLayout + Hero + ProposalList        │
-│ ProposalsPage│ PageLayout + SearchBar + ProposalList │
-│ ProposalPage │ PageLayout + ProposalDetail + Comments │
-│ CreatePage   │ PageLayout + AuthForm                  │
-│ DashboardPage│ DashboardLayout + Dashboard             │
-│ AdminPage    │ DashboardLayout + AdminPanel           │
-└─────────────────────────────────────────────────────────┘
+PAGES
+  HomePage        — Landing page with SSR-rendered trending proposals
+  ProposalsPage   — SSR listing with filters and pagination
+  ProposalPage    — Proposal detail with voting
+  CreatePage      — Multi-step form (client component)
+  LoginPage       — Login form
+  RegisterPage    — Registration form
+  DashboardPage   — User dashboard
+  AdminPage       — Admin dashboard (client, auto-refresh)
+  AdminUsersPage  — User management (ADMIN only)
+  AdminAuditPage  — Audit logs (ADMIN only)
+  AdminProposals  — Moderation queue
 ```
 
 ---
 
-## 6. Data Flow Narrative
+## 6. Data Flow Narratives
 
 ### 6.1 User Registration Flow
 
 ```
-1. Client: POST /api/auth/register {email, password}
+1. Client: POST /api/auth/register {email, password, name}
             ↓
 2. Express: Validate request body (Zod)
             ↓
 3. AuthService: Check email uniqueness
                ↓
-4. Database: INSERT INTO users (email, password_hash)
+4. Database: INSERT INTO users (email, name, password_hash)
              ← bcrypt.hash(password, 12)
              ↓
-5. JWTService: Generate token {userId, role, exp}
-              ↓
+5. JWT: Generate token {userId, role, exp}
+            ↓
 6. AuditLog: INSERT INTO audit_logs (user_id, 'CREATE', 'user')
             ↓
 7. Response: {id, email, role, token}
@@ -522,298 +381,134 @@ CREATE TRIGGER update_proposals_updated_at BEFORE UPDATE ON proposals
            ↓
 3. Validation: title 3-500, description 10-10000
                ↓
-4. ProposalService:
-   ├─ Validate user not suspended
-   ├─ Check rate limit (10 proposals/day)
-   └─ Generate slug
-              ↓
+4. ProposalService → proposalRepository.createProposal()
+               ↓
 5. Database: INSERT INTO proposals (title, description, author_id)
-             Get INSERTED id
-             ↓
-6. Cache: Redis DEL proposals:*
-         Redis DEL trending:*
-              ↓
+               ↓
+6. Cache: Redis DEL proposals:trending:10
+               ↓
 7. AuditLog: INSERT INTO audit_logs (user_id, 'CREATE', 'proposal')
              ↓
-8. Response: {id, title, status: 'OPEN', voteCount: 0}
+8. Response: {id, title, status: 'OPEN', voteCount: 0, ...}
 ```
 
-### 6.3 Vote Casting Flow (High Volume)
+### 6.3 Vote Casting Flow
 
 ```
 1. Client: POST /api/proposals/:id/vote
-          Bearer token
+           Bearer token
            ↓
 2. Express: JWT → req.user
            ↓
 3. Validation: Proposal exists, status=OPEN
               ↓
-4. VoteService:
-   ├─ Check user hasn't voted (cache)
-   └─ Check user != author
+4. VoteService → proposalRepository.findById()
               ↓
-5. Redis: GET vote:proposalId:userId
-         If not exists:
-           → SET vote:proposalId:userId 1 EX 300
-           → HINCRBY vote:buffer proposalId 1
+5. Check: user != author, not already voted (Redis cache + DB)
               ↓
-6. RabbitMQ: Publish vote.cast message
-            {proposalId, userId, timestamp}
+6. Database: INSERT INTO votes, INCREMENT proposals.vote_count
               ↓
-7. Vote Worker:
-   ├─ Consume queue
-   ├─ BEGIN transaction
-   │  INSERT INTO votes (proposal_id, user_id)
-   │  UPDATE proposals SET vote_count = vote_count + 1
-   ├─ COMMIT
-   └─ Redis DEL cache
+7. Redis: SET vote:proposalId:userId, DEL proposals:trending:10
               ↓
-8. Response: {proposalId, voteCount: N+1, userVoted: true}
-            (Optimistic - may adjust after DB write)
+8. RabbitMQ: Publish vote message (fire-and-forget)
+              ↓
+9. AuditLog: INSERT INTO audit_logs (user_id, 'VOTE', 'proposal')
+             ↓
+10. Response: {proposalId, voteCount: N+1, userVoted: true}
 ```
 
 ### 6.4 Proposal Listing Flow (Cached)
 
 ```
 1. Client: GET /api/proposals?page=1&status=OPEN
+           (optional Bearer token for userVote status)
            ↓
-2. Cache: GET proposals:page=1:status=OPEN:sort=createdAt
-        If HIT:
-          → Return cached JSON + cache hit header
-        If MISS:
-          ↓
+2. ProposalService → proposalRepository.findPaginated()
+           ↓
 3. QueryBuilder:
    ├─ WHERE status = $1
-   ├─ ORDER BY created_at DESC
-   ├─ LIMIT 10 OFFSET 0
-   └─ JOIN users ON author_id
+   ├─ Optional: to_tsvector search
+   ├─ ORDER BY created_at DESC / vote_count DESC
+   ├─ LIMIT $2 OFFSET $3
+   └─ Optional: LEFT JOIN votes for current user
               ↓
 4. Database: SELECT + Execution
               ↓
-5. Cache: SET proposals:page=1:status=OPEN:sort=createdAt
-         JSON.stringify(result) EX 60
-              ↓
-6. Response: {data: [...], pagination: {...}}
+5. Response: {data: [...], pagination: {...}}
 ```
 
 ---
 
-## 7. Docker Stage Map
+## 7. Docker Architecture
 
-### 7.1 Development Stage
+### 7.1 Services
 
-```yaml
-services:
-  postgres:
-    image: postgres:16-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: civic_engagement
-      POSTGRES_USER: dev
-      POSTGRES_PASSWORD: dev
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dev"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+| Service | Image | Port | Health Check | Dependencies |
+|---------|-------|------|-------------|--------------|
+| postgres | postgres:16-alpine | 5432 | pg_isready | — |
+| redis | redis:7-alpine | 6379 | redis-cli ping | — |
+| rabbitmq | rabbitmq:3.13-management | 5672, 15672 | rabbitmq-diagnostics | — |
+| api | Custom (Dockerfile target: development) | 3000 | — | postgres, redis, rabbitmq |
+| web | Custom (Dockerfile target: development) | 5173 | — | api |
+| postgres-test | postgres:16-alpine | 5433 | pg_isready | — |
+| redis-test | redis:7-alpine | 6380 | redis-cli ping | — |
+| rabbitmq-test | rabbitmq:3.13-management | 5673 | rabbitmq-diagnostics | — |
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+### 7.2 Environment Variables
 
-  rabbitmq:
-    image: rabbitmq:3.13-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: dev
-      RABBITMQ_DEFAULT_PASS: dev
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  api:
-    build:
-      context: .
-      dockerfile: packages/api/Dockerfile.dev
-    ports:
-      - "3000:3000"
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://dev:dev@postgres:5432/civic_engagement
-      REDIS_URL: redis://redis:6379
-      RABBITMQ_URL: amqp://dev:dev@rabbitmq:5672
-      JWT_SECRET: dev-secret-change-in-prod
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    volumes:
-      - ./packages/api:/app
-      - /app/node_modules
-
-  web:
-    build:
-      context: .
-      dockerfile: packages/web/Dockerfile.dev
-    ports:
-      - "5173:5173"
-    environment:
-      VITE_API_URL: http://localhost:3000/api
-    depends_on:
-      - api
-    volumes:
-      - ./packages/web:/app
-      - /app/node_modules
-```
-
-### 7.2 Build Stage
-
-```yaml
-# packages/api/Dockerfile
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY packages/api/package*.json ./
-RUN npm ci
-COPY packages/api/ ./
-RUN npm run build
-
-FROM node:20-alpine AS runner
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY packages/api/package*.json ./
-USER node
-EXPOSE 3000
-CMD ["node", "dist/index.js"]
-
-# packages/web/Dockerfile
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY packages/web/package*.json ./
-RUN npm ci
-COPY packages/web/ ./
-RUN npm run build
-
-FROM nginx:alpine AS runner
-COPY --from=builder /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-### 7.3 Production Stage
-
-```yaml
-services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: civic_engagement
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    user: postgres:postgres
-
-  redis:
-    image: redis:7-alpine
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
-    user: redis:redis
-
-  rabbitmq:
-    image: rabbitmq:3.13-management-alpine
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-
-  api:
-    build:
-      context: .
-      dockerfile: packages/api/Dockerfile
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      RABBITMQ_URL: ${RABBITMQ_URL}
-      JWT_SECRET: ${JWT_SECRET}
-    restart: unless-stopped
-
-  web:
-    build:
-      context: .
-      dockerfile: packages/web/Dockerfile
-    restart: unless-stopped
-```
-
-### 7.4 Environment Variables
-
-| Variable | Development | Production |
-|----------|-------------|------------|
-| `NODE_ENV` | development | production |
-| `DATABASE_URL` | postgresql://dev:dev@... | (secret) |
-| `REDIS_URL` | redis://localhost:6379 | (secret) |
-| `RABBITMQ_URL` | amqp://dev:dev@... | (secret) |
-| `JWT_SECRET` | dev-secret | (min 256-bit) |
-| `POSTGRES_USER` | dev | (secret) |
-| `POSTGRES_PASSWORD` | dev | (secret) |
-| `RABBITMQ_USER` | dev | (secret) |
-| `RABBITMQ_PASSWORD` | dev | (secret) |
+| Variable | Description | Default (Dev) |
+|----------|-------------|---------------|
+| NODE_ENV | Environment mode | development |
+| PORT | API server port | 3000 |
+| DATABASE_URL | PostgreSQL connection | postgresql://postgres:postgres@postgres:5432/cityhub |
+| REDIS_URL | Redis connection | redis://redis:6379 |
+| RABBITMQ_URL | RabbitMQ connection | amqp://guest:guest@rabbitmq:5672 |
+| AUTH_JWT_SECRET | JWT signing key (min 32 chars) | dev-secret-key-minimum-32-characters-required |
+| AUTH_JWT_EXPIRY | Token expiration | 7d |
+| FRONTEND_URL | CORS origin | http://localhost:5173 |
+| NEXT_PUBLIC_API_URL | Frontend API URL (browser) | http://localhost:3000 |
+| API_URL_FOR_SERVER | Frontend API URL (SSR) | http://api:3000 |
 
 ---
 
-## 8. Security Considerations
+## 8. Security Architecture
 
 ### 8.1 Authentication
-- JWT tokens: 1 hour expiry, refresh token 7 days
-- Password requirements: min 8 chars, complexity not enforced for MVP
-- Rate limiting: 10 requests/minute per IP on auth endpoints
+- JWT tokens: configurable expiry (7d dev default, 1h prod recommendation)
+- Password hashing: bcrypt with cost factor 12, 10-second timeout
+- Rate limiting per endpoint group (auth: 10/min, api: 100/min, voting: 30/min)
 
-### 8.2 Authorization
-- Roles: USER, MODERATOR, ADMIN
-- USER: create proposals, vote, view own data
-- MODERATOR: + delete any proposal, view all data
-- ADMIN: + analytics, user management
+### 8.2 Authorization (RBAC)
+- **USER**: create proposals, vote, view own dashboard
+- **MODERATOR**: USER + moderate any proposal (approve/close/reject)
+- **ADMIN**: MODERATOR + user management, role assignment, audit logs, analytics
+
+Role hierarchy enforced via `requireRole(...roles)` middleware:
+```
+USER=1 < MODERATOR=2 < ADMIN=3
+```
 
 ### 8.3 Data Protection
-- Passwords: bcrypt hashed (cost 12)
-- HTTPS only in production
-- CORS: specific origins only
-- Helmet: security headers
+- Passwords: bcrypt hashed (never stored in plaintext)
+- CORS: restricted to `FRONTEND_URL` only
+- Helmet: security headers (CSP, XSS protection, etc.)
+- Input validation: Zod on all API request bodies
+- Audit trail: immutable log of all CREATE/UPDATE/DELETE/VOTE actions
 
 ---
 
 ## 9. Migration Path
 
 ### 9.1 Express → NestJS
-
-Architecture supports future NestJS migration:
 - Current service layer → NestJS services (@Injectable)
 - Current routes → NestJS controllers (@Controller)
 - Current middleware → NestJS guards/middleware
-- Knex.js → TypeORM or Prisma (compatible schema)
+- Current Zod validation → NestJS pipes
 
-### 9.2 React + Vite → Next.js
-
-Architecture supports future Next.js migration:
-- Current components → Next.js pages
-- React Query → Next.js data fetching (server components)
-- Current routing → Next.js App Router
-- Vite config → Next.js config (compatible)
+### 9.2 Frontend → Enhanced
+- Current server components → Extended ISR/cache strategies
+- Client components → Micro-frontend boundaries
+- Current API client → tRPC or GraphQL integration
 
 ---
 
@@ -823,13 +518,14 @@ Architecture supports future Next.js migration:
 
 | Code | Meaning |
 |------|---------|
-| 400 | Bad Request - validation failed |
-| 401 | Unauthorized - invalid/missing token |
-| 403 | Forbidden - insufficient permissions |
-| 404 | Not Found - resource doesn't exist |
-| 409 | Conflict - duplicate/invalid state |
-| 429 | Too Many Requests - rate limit exceeded |
+| 400 | Bad Request — validation failed |
+| 401 | Unauthorized — invalid/missing token |
+| 403 | Forbidden — insufficient permissions |
+| 404 | Not Found — resource doesn't exist |
+| 409 | Conflict — duplicate/invalid state |
+| 429 | Too Many Requests — rate limit exceeded |
 | 500 | Internal Server Error |
+| 503 | Service Unavailable — DB/Redis timeout |
 
 ### 10.2 Index Summary
 
@@ -840,7 +536,6 @@ Architecture supports future Next.js migration:
 | proposals | idx_proposals_status | B-tree | status |
 | proposals | idx_proposals_created_at | B-tree | created_at |
 | proposals | idx_proposals_vote_count | B-tree | vote_count |
-| proposals | idx_proposals_fts | GIN | tsvector |
 | proposals | idx_proposals_author_id | B-tree | author_id |
 | votes | votes_proposal_id_user_id | Unique | (proposal_id, user_id) |
 | votes | idx_votes_proposal_id | B-tree | proposal_id |
@@ -851,5 +546,5 @@ Architecture supports future Next.js migration:
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: 2026-05-07*
+*Document Version: 2.0*
+*Last Updated: 2026-05-12*
