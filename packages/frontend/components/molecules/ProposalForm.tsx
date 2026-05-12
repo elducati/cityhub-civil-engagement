@@ -18,12 +18,6 @@ const proposalSchema = z.object({
   longitude: z.coerce.number().min(-180).max(180).optional().or(z.literal('')),
 });
 
-const proposalSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters').max(100, 'Title must be less than 100 characters'),
-  description: z.string().min(20, 'Description must be at least 20 characters').max(5000, 'Description must be less than 5000 characters'),
-  category: z.string().min(1, 'Please select a category'),
-  tags: z.array(z.string()).min(1, 'Add at least one tag').max(5, 'Maximum 5 tags allowed'),
-});
 
 type ProposalFormValues = z.infer<typeof proposalSchema>;
 

@@ -55,8 +55,7 @@ router.get('/trending', async (_req, res: Response, next) => {
 
 router.get('/', optionalAuth, async (req: AuthRequest, res: Response, next) => {
   try {
-    const page = parseInt(req.query.page as string, 10) || 1;
-    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const { page, limit } = req.safeQuery;
     const status = req.query.status as 'OPEN' | 'CLOSED' | 'ARCHIVED' | undefined;
     const category = req.query.category as string | undefined;
     const sort = (req.query.sort as 'createdAt' | 'voteCount') || 'createdAt';

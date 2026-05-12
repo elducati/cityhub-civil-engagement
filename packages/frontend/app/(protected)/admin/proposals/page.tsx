@@ -8,6 +8,7 @@ import { formatRelativeDate } from '@/lib/utils';
 import { Check, X, CheckCircle, Filter, Download, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { api } from '@/lib/api';
+import { TableRowSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 function StatusBadge({ status }: { status: string }) {
   const styles = {
@@ -60,8 +61,29 @@ export default function AdminProposalsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-surface-base flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      <div className="min-h-screen bg-surface-base p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="mt-8 bg-surface-container rounded-3xl overflow-hidden">
+            <table className="min-w-full divide-y divide-outline">
+              <thead className="bg-surface-container-high">
+                <tr>
+                  {['Title', 'Author', 'Status', 'Votes', 'Date', 'Actions'].map((h) => (
+                    <th key={h} className="px-6 py-4">
+                      <Skeleton className="h-3 w-16" />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-surface-container">
+                {Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} cols={6} />)}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }

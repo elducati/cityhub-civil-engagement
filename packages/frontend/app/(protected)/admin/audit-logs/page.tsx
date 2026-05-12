@@ -24,8 +24,11 @@ function ActionBadge({ action }: { action: string }) {
 
 export default function AdminAuditLogsPage() {
   const [page, setPage] = useState(1);
+  const [actionFilter, setActionFilter] = useState<string>('');
   const { data, isLoading, error, refetch } = useAdminAuditLogs(page);
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
+  const allActions = ['CREATE', 'UPDATE', 'DELETE', 'VOTE', 'UNVOTE', 'LOGIN'];
+  const filteredLogs = data?.data.filter(log => !actionFilter || log.action === actionFilter) ?? [];
 
   if (isLoading) {
     return (
@@ -67,6 +70,31 @@ export default function AdminAuditLogsPage() {
           </Button>
         </div>
 
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <span className="text-sm font-medium text-on-surface-variant">Filter by action:</span>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => { setActionFilter(''); setPage(1); }}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                !actionFilter ? 'bg-primary text-white' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+              }`}
+            >
+              All
+            </button>
+            {allActions.map(action => (
+              <button
+                key={action}
+                onClick={() => { setActionFilter(action); setPage(1); }}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  actionFilter === action ? 'bg-primary text-white' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                }`}
+              >
+                {action}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-outline">
@@ -80,11 +108,10 @@ export default function AdminAuditLogsPage() {
                 </tr>
               </thead>
               <tbody className="bg-surface-container divide-y divide-outline">
-                {data?.data.map((log) => (
+                {filteredLogs.map((log) => (
                   <tr
                     key={log.id}
-                    className="hover:bg-surface-container-high transition-colors cursor-pointer"
-                    onClick={() => setExpandedRow(expandedRow === log.id ? null : log.id)}
+                    className="hover:bg-surface-container-high transition-colors"
                   >
                     <td className="px-6 py-4">
                       <ActionBadge action={log.action} />
@@ -102,12 +129,12 @@ export default function AdminAuditLogsPage() {
               </tbody>
             </table>
           </div>
-          {(!data?.data || data.data.length === 0) && (
+          {filteredLogs.length === 0 ? (
             <div className="text-center py-12">
               <ScrollText className="w-12 h-12 mx-auto text-on-surface-variant mb-4" />
-              <p className="text-on-surface-variant">No audit logs found</p>
+              <p className="text-on-surface-variant">{actionFilter ? 'No matching audit logs' : 'No audit logs found'}</p>
             </div>
-          )}
+          ) : null}
         </Card>
 
         {data && data.totalPages > 1 && (

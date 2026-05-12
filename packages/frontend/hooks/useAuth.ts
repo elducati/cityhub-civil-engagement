@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { login as loginApi, register as registerApi, logout as logoutApi, getCurrentUser } from '@/lib/auth';
 import type { LoginCredentials, RegisterData, UserProfile } from '@/types/user';
+import { useToast } from './useToast';
 
 interface UseAuthState {
   user: UserProfile | null;
@@ -39,6 +40,7 @@ export function useAuth() {
   const [state, setState] = useState<UseAuthState>(initialState);
 
   const generation = useSyncExternalStore(subscribeToGeneration, getGeneration, getGeneration);
+  const toast = useToast();
 
   const fetchUser = useCallback(async () => {
     try {
@@ -74,17 +76,20 @@ export function useAuth() {
         isAuthenticated: true,
         error: null,
       });
+      toast.success('Signed in successfully');
       bumpGeneration();
       return response;
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login failed';
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Login failed',
+        error: message,
       }));
+      toast.error(message);
       throw error;
     }
-  }, []);
+  }, [toast]);
 
   const register = useCallback(async (data: RegisterData) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -97,17 +102,20 @@ export function useAuth() {
         isAuthenticated: true,
         error: null,
       });
+      toast.success('Account created successfully');
       bumpGeneration();
       return response;
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Registration failed';
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Registration failed',
+        error: message,
       }));
+      toast.error(message);
       throw error;
     }
-  }, []);
+  }, [toast]);
 
   const logout = useCallback(async () => {
     setState(prev => ({ ...prev, isLoading: true }));
@@ -119,6 +127,7 @@ export function useAuth() {
         isAuthenticated: false,
         error: null,
       });
+      toast.success('Signed out');
       bumpGeneration();
     } catch {
       setState(prev => ({
@@ -126,7 +135,7 @@ export function useAuth() {
         isLoading: false,
       }));
     }
-  }, []);
+  }, [toast]);
 
   return {
     ...state,

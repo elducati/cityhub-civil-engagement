@@ -16,6 +16,7 @@ import {
   type CreateProposalInput,
   type UpdateProposalInput
 } from '@/lib/proposals';
+import { useToast } from './useToast';
 
 export function useProposals(params: ProposalQueryParams = {}) {
   return useQuery({
@@ -43,17 +44,23 @@ export function useProposal(proposalId: string) {
 
 export function useCreateProposal() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   
   return useMutation({
     mutationFn: (input: CreateProposalInput) => createProposal(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      toast.success('Proposal created successfully');
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to create proposal');
     },
   });
 }
 
 export function useUpdateProposal() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   
   return useMutation({
     mutationFn: ({ proposalId, input }: { proposalId: string; input: UpdateProposalInput }) =>
@@ -61,41 +68,60 @@ export function useUpdateProposal() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       queryClient.invalidateQueries({ queryKey: ['proposal', variables.proposalId] });
+      toast.success('Proposal updated');
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to update proposal');
     },
   });
 }
 
 export function useDeleteProposal() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   
   return useMutation({
     mutationFn: (proposalId: string) => deleteProposal(proposalId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      toast.success('Proposal deleted');
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to delete proposal');
     },
   });
 }
 
 export function useVote() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   
   return useMutation({
     mutationFn: (proposalId: string) => voteForProposal(proposalId),
     onSuccess: (_, proposalId) => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       queryClient.invalidateQueries({ queryKey: ['proposal', proposalId] });
+      toast.success('Vote cast');
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to vote');
     },
   });
 }
 
 export function useRemoveVote() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   
   return useMutation({
     mutationFn: (proposalId: string) => removeVote(proposalId),
     onSuccess: (_, proposalId) => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       queryClient.invalidateQueries({ queryKey: ['proposal', proposalId] });
+      toast.success('Vote removed');
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to remove vote');
     },
   });
 }

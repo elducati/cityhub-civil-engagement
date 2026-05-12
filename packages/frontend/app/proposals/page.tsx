@@ -1,4 +1,8 @@
 export const revalidate = 60;
+export const metadata = {
+  title: 'Proposals',
+  description: 'Browse and support community proposals. Filter by category, status, or search for topics that matter to you.',
+};
 
 import Link from 'next/link';
 import { getProposals } from '@/lib/proposals';

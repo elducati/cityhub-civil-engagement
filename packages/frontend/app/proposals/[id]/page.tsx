@@ -3,12 +3,31 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useProposal, useVote, useRemoveVote } from '@/hooks/useProposals';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatRelativeDate } from '@/lib/utils';
-import { ArrowLeft, Search, Share2, FileText, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Search, Share2, FileText, ArrowRight, MapPin } from 'lucide-react';
+
+const categoryLabels: Record<string, string> = {
+  infrastructure: 'Infrastructure',
+  environment: 'Environment',
+  safety: 'Public Safety',
+  transportation: 'Transportation',
+  community: 'Community',
+  other: 'Other',
+};
+
+const categoryColors: Record<string, string> = {
+  infrastructure: 'bg-blue-100 text-blue-700',
+  environment: 'bg-green-100 text-green-700',
+  safety: 'bg-red-100 text-red-700',
+  transportation: 'bg-amber-100 text-amber-700',
+  community: 'bg-purple-100 text-purple-700',
+  other: 'bg-gray-100 text-gray-700',
+};
 
 function StatusBadge({ status }: { status: string }) {
   const styles = {
@@ -43,6 +62,8 @@ export default function ProposalDetailPage() {
   const { data: proposal, isLoading } = useProposal(proposalId);
   const voteMutation = useVote();
   const removeVoteMutation = useRemoveVote();
+
+  usePageTitle(proposal ? proposal.title : 'Proposal');
 
   if (isLoading) {
     return (
@@ -95,6 +116,11 @@ export default function ProposalDetailPage() {
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
               <div className="flex-1">
                 <StatusBadge status={proposal.status} />
+                {proposal.category && (
+                  <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${categoryColors[proposal.category] || 'bg-gray-100 text-gray-700'}`}>
+                    {categoryLabels[proposal.category] || proposal.category}
+                  </span>
+                )}
                 <h1 className="text-3xl font-bold text-on-surface mt-3">{proposal.title}</h1>
               </div>
               <VoteCount count={proposal.voteCount} />
@@ -103,6 +129,13 @@ export default function ProposalDetailPage() {
             <div className="mb-8">
               <p className="text-on-surface-variant whitespace-pre-wrap leading-relaxed">{proposal.description}</p>
             </div>
+
+            {proposal.latitude && proposal.longitude && (
+              <div className="mb-6 flex items-center gap-2 text-sm text-on-surface-variant">
+                <MapPin className="w-4 h-4 text-primary" />
+                <span>{proposal.latitude.toFixed(4)}, {proposal.longitude.toFixed(4)}</span>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6 border-t border-outline">
               <div className="flex items-center gap-3">

@@ -16,6 +16,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from 'lucide-react';
+import { BarChart, DonutChart, TrendChart } from '@/components/ui/charts';
 
 function StatCard({
   title,
@@ -142,23 +143,38 @@ export default function AdminDashboardPage() {
               <CardTitle className="text-lg font-semibold text-on-surface">Proposals by Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <BarChart
+                data={[
+                  { label: 'Open', value: stats.proposalsByStatus.OPEN, color: 'bg-success' },
+                  { label: 'Closed', value: stats.proposalsByStatus.CLOSED, color: 'bg-on-surface-variant' },
+                  { label: 'Archived', value: stats.proposalsByStatus.ARCHIVED, color: 'bg-outline' },
+                ]}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-on-surface">Users by Role</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center">
+              <DonutChart
+                data={[
+                  { label: 'Users', value: stats.usersByRole.USER, color: 'bg-primary' },
+                  { label: 'Moderators', value: stats.usersByRole.MODERATOR, color: 'bg-secondary' },
+                  { label: 'Admins', value: stats.usersByRole.ADMIN, color: 'bg-warning' },
+                ]}
+              />
+              <div className="flex gap-4 mt-4">
                 {[
-                  { label: 'Open', count: stats.proposalsByStatus.OPEN, color: 'bg-success', percent: stats.totalProposals > 0 ? stats.proposalsByStatus.OPEN / stats.totalProposals * 100 : 0 },
-                  { label: 'Closed', count: stats.proposalsByStatus.CLOSED, color: 'bg-on-surface-variant', percent: stats.totalProposals > 0 ? stats.proposalsByStatus.CLOSED / stats.totalProposals * 100 : 0 },
-                  { label: 'Archived', count: stats.proposalsByStatus.ARCHIVED, color: 'bg-outline', percent: stats.totalProposals > 0 ? stats.proposalsByStatus.ARCHIVED / stats.totalProposals * 100 : 0 },
+                  { label: 'Users', count: stats.usersByRole.USER, color: 'bg-primary' },
+                  { label: 'Moderators', count: stats.usersByRole.MODERATOR, color: 'bg-secondary' },
+                  { label: 'Admins', count: stats.usersByRole.ADMIN, color: 'bg-warning' },
                 ].map((item) => (
-                  <div key={item.label} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-on-surface font-medium">{item.label}</span>
-                      <span className="text-on-surface-variant">{item.count}</span>
-                    </div>
-                    <div className="w-full h-2 bg-surface-base rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${item.color}`}
-                        style={{ width: `${Math.max(1, item.percent)}%` }}
-                      />
-                    </div>
+                  <div key={item.label} className="flex items-center gap-1.5 text-sm">
+                    <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                    <span className="text-on-surface-variant">{item.label}</span>
+                    <span className="font-semibold text-on-surface">{item.count}</span>
                   </div>
                 ))}
               </div>
@@ -167,24 +183,13 @@ export default function AdminDashboardPage() {
 
           <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-on-surface">Users by Role</CardTitle>
+              <CardTitle className="text-lg font-semibold text-on-surface flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Proposal Trends
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { label: 'Users', count: stats.usersByRole.USER, color: 'bg-primary' },
-                  { label: 'Moderators', count: stats.usersByRole.MODERATOR, color: 'bg-secondary' },
-                  { label: 'Admins', count: stats.usersByRole.ADMIN, color: 'bg-warning' },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center justify-between p-3 bg-surface-base rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${item.color}`} />
-                      <span className="text-on-surface font-medium">{item.label}</span>
-                    </div>
-                    <span className="text-on-surface-variant font-semibold">{item.count}</span>
-                  </div>
-                ))}
-              </div>
+            <CardContent className="flex flex-col items-center">
+              <TrendChart current={stats.thisMonthProposals} previous={stats.lastMonthProposals} />
             </CardContent>
           </Card>
         </div>
