@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { login as loginApi, register as registerApi, logout as logoutApi, getCurrentUser } from '@/lib/auth';
 import type { LoginCredentials, RegisterData, UserProfile } from '@/types/user';
 
@@ -11,13 +11,34 @@ interface UseAuthState {
   error: string | null;
 }
 
+let authGeneration = 0;
+const generationListeners = new Set<() => void>();
+
+function subscribeToGeneration(onChange: () => void): () => void {
+  generationListeners.add(onChange);
+  return () => generationListeners.delete(onChange);
+}
+
+function bumpGeneration(): void {
+  authGeneration++;
+  generationListeners.forEach(fn => fn());
+}
+
+function getGeneration(): number {
+  return authGeneration;
+}
+
+const initialState: UseAuthState = {
+  user: null,
+  isLoading: true,
+  isAuthenticated: false,
+  error: null,
+};
+
 export function useAuth() {
-  const [state, setState] = useState<UseAuthState>({
-    user: null,
-    isLoading: true,
-    isAuthenticated: false,
-    error: null,
-  });
+  const [state, setState] = useState<UseAuthState>(initialState);
+
+  const generation = useSyncExternalStore(subscribeToGeneration, getGeneration, getGeneration);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -40,7 +61,7 @@ export function useAuth() {
 
   useEffect(() => {
     fetchUser();
-  }, [fetchUser]);
+  }, [fetchUser, generation]);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -53,6 +74,7 @@ export function useAuth() {
         isAuthenticated: true,
         error: null,
       });
+      bumpGeneration();
       return response;
     } catch (error) {
       setState(prev => ({
@@ -75,6 +97,7 @@ export function useAuth() {
         isAuthenticated: true,
         error: null,
       });
+      bumpGeneration();
       return response;
     } catch (error) {
       setState(prev => ({
@@ -96,6 +119,7 @@ export function useAuth() {
         isAuthenticated: false,
         error: null,
       });
+      bumpGeneration();
     } catch {
       setState(prev => ({
         ...prev,

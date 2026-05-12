@@ -27,8 +27,10 @@ import {
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const trendingData = await getTrendingProposals(5);
-  const allProposalsData = await getProposals({ limit: 6 });
+  const [trendingData, allProposalsData] = await Promise.all([
+    getTrendingProposals(5),
+    getProposals({ limit: 6 }),
+  ]);
 
   return (
     <div className="min-h-screen bg-[#FFFBFE] overflow-hidden">

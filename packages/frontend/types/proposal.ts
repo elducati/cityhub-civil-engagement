@@ -8,6 +8,9 @@ export interface Proposal {
   createdAt: string;
   updatedAt?: string;
   userVote?: boolean;
+  category: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface ProposalDetail extends Proposal {
@@ -21,6 +24,9 @@ export interface ProposalDetail extends Proposal {
 export interface CreateProposalInput {
   title: string;
   description: string;
+  category?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface UpdateProposalInput {

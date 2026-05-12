@@ -7,6 +7,16 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MapPin } from 'lucide-react';
+
+const proposalSchema = z.object({
+  title: z.string().min(5, 'Title must be at least 5 characters').max(100, 'Title must be less than 100 characters'),
+  description: z.string().min(20, 'Description must be at least 20 characters').max(5000, 'Description must be less than 5000 characters'),
+  category: z.string().min(1, 'Please select a category'),
+  tags: z.array(z.string()).min(1, 'Add at least one tag').max(5, 'Maximum 5 tags allowed'),
+  latitude: z.coerce.number().min(-90).max(90).optional().or(z.literal('')),
+  longitude: z.coerce.number().min(-180).max(180).optional().or(z.literal('')),
+});
 
 const proposalSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(100, 'Title must be less than 100 characters'),
@@ -50,6 +60,8 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
       description: '',
       category: '',
       tags: [],
+      latitude: '',
+      longitude: '',
     },
   });
 
@@ -136,6 +148,26 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
               </div>
             )}
           />
+          <div className="space-y-2">
+            <Label className="text-on-surface flex items-center gap-1">
+              <MapPin className="w-4 h-4" />
+              Location (optional)
+            </Label>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                {...register('latitude')}
+                type="number"
+                step="any"
+                placeholder="Latitude"
+              />
+              <Input
+                {...register('longitude')}
+                type="number"
+                step="any"
+                placeholder="Longitude"
+              />
+            </div>
+          </div>
           <div className="space-y-2">
             <Label className="text-on-surface">Tags</Label>
             <div className="flex gap-2 mb-2">

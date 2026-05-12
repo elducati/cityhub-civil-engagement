@@ -24,20 +24,28 @@ export function errorHandler(
   if (errorName === 'ZodError' || err instanceof ZodError) {
     const zodErr = err as ZodError;
     res.status(400).json({
-      error: 'Bad Request',
-      message: 'Validation failed',
-      details: zodErr.errors.map((e: ZodErrorType['errors'][number]) => ({
-        path: e.path.join('.'),
-        message: e.message,
-      })),
+      success: false,
+      data: null,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        details: zodErr.errors.map((e: ZodErrorType['errors'][number]) => ({
+          path: e.path.join('.'),
+          message: e.message,
+        })),
+      },
     });
     return;
   }
 
   if (errorName === 'SyntaxError' && err.message.includes('JSON')) {
     res.status(400).json({
-      error: 'Bad Request',
-      message: 'Invalid JSON in request body',
+      success: false,
+      data: null,
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'Invalid JSON in request body',
+      },
     });
     return;
   }
@@ -45,9 +53,13 @@ export function errorHandler(
   const message = err.message || 'Internal Server Error';
 
   res.status(statusCode).json({
-    error: statusCode === 500 ? 'Internal Server Error' : err.name || 'Error',
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    success: false,
+    data: null,
+    error: {
+      code: statusCode === 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR',
+      message,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    },
   });
 }
 

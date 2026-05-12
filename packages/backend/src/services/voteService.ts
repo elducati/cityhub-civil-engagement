@@ -1,7 +1,7 @@
 import { getDatabase } from '../config/database';
 import { createError } from '../middleware/errorHandler';
 import { createAuditLog } from './auditService';
-import { checkUserVoted, setUserVoted, removeUserVote, incrementVoteBuffer, deleteCache } from './cacheService';
+import { checkUserVoted, setUserVoted, removeUserVote, incrementVoteBuffer } from './cacheService';
 import { publishVoteMessage } from './queueService';
 import { proposalRepository } from '../repositories/proposalRepository';
 
@@ -66,13 +66,9 @@ export async function castVote(proposalId: string, userId: string): Promise<{
     entityId: proposalId,
   });
 
-  await deleteCache('proposals:trending:10');
-
-  const updated = await proposalRepository.findById(proposalId);
-
   return {
     proposalId,
-    voteCount: updated?.vote_count || 0,
+    voteCount: (proposal.vote_count || 0) + 1,
     userVoted: true,
   };
 }
@@ -116,13 +112,9 @@ export async function removeVote(proposalId: string, userId: string): Promise<{
     entityId: proposalId,
   });
 
-  await deleteCache('proposals:trending:10');
-
-  const updated = await proposalRepository.findById(proposalId);
-
   return {
     proposalId,
-    voteCount: Math.max(0, updated?.vote_count || 0),
+    voteCount: Math.max(0, (proposal.vote_count || 0) - 1),
     userVoted: false,
   };
 }

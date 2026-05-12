@@ -17,11 +17,17 @@ export interface Proposal {
   createdAt: Date;
   updatedAt?: Date;
   userVote?: boolean;
+  category: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface CreateProposalInput {
   title: string;
   description: string;
+  category?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface UpdateProposalInput {
@@ -40,6 +46,9 @@ function mapRow(row: {
   created_at: Date;
   updated_at: Date;
   user_vote?: boolean;
+  category?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }): Proposal {
   return {
     id: row.id,
@@ -51,6 +60,9 @@ function mapRow(row: {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     userVote: row.user_vote,
+    category: row.category || null,
+    latitude: row.latitude || null,
+    longitude: row.longitude || null,
   };
 }
 
@@ -70,6 +82,7 @@ export async function listProposals(
     page?: number;
     limit?: number;
     status?: ProposalStatus;
+    category?: string;
     sort?: 'createdAt' | 'voteCount';
     search?: string;
   },
@@ -126,6 +139,9 @@ export async function createProposal(
     title: input.title,
     description: input.description,
     author_id: authorId,
+    category: input.category,
+    latitude: input.latitude,
+    longitude: input.longitude,
   });
 
   await createAuditLog({

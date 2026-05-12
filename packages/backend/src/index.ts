@@ -10,6 +10,7 @@ import proposalRoutes from './routes/proposals';
 import analyticsRoutes from './routes/analytics';
 import metricsRoutes from './routes/metrics';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { responseEnvelope } from './middleware/responseEnvelope';
 import { correlationIdMiddleware, requestLoggingMiddleware } from './middleware/correlationId';
 import { connectToQueue } from './services/queueService';
 import { logger } from './services/logger';
@@ -38,6 +39,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(correlationIdMiddleware);
 app.use(requestLoggingMiddleware);
+app.use(responseEnvelope);
 
 async function initServices(): Promise<void> {
   try {

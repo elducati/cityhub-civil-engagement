@@ -65,10 +65,20 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const totalProposals = parseInt(String(proposalCount?.total || 0), 10);
   const totalVotes = parseInt(String(voteCount?.total || 0), 10);
 
-  const statusCounts = await db('proposals')
-    .select('status')
-    .count('id as count')
-    .groupBy('status');
+  const now = new Date();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+  const [statusCounts, roleCounts, uniqueVoterResult, monthlyResult] = await Promise.all([
+    db('proposals').select('status').count('id as count').groupBy('status'),
+    db('users').select('role').count('id as count').groupBy('role'),
+    db('votes').countDistinct('user_id as count').first(),
+    db('proposals').select(
+      db.raw("COUNT(*) FILTER (WHERE created_at >= ?) as this_month", [thisMonthStart]),
+      db.raw("COUNT(*) FILTER (WHERE created_at >= ? AND created_at < ?) as last_month", [lastMonthStart, lastMonthEnd])
+    ).first(),
+  ]);
 
   const proposalsByStatus = { OPEN: 0, CLOSED: 0, ARCHIVED: 0 };
   for (const row of statusCounts) {
@@ -77,11 +87,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     }
   }
 
-  const roleCounts = await db('users')
-    .select('role')
-    .count('id as count')
-    .groupBy('role');
-
   const usersByRole = { USER: 0, MODERATOR: 0, ADMIN: 0 };
   for (const row of roleCounts) {
     if (row.role in usersByRole) {
@@ -89,19 +94,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     }
   }
 
-  const uniqueVoterResult = await db('votes').countDistinct('user_id as count').first();
   const uniqueVoterCount = parseInt(String(uniqueVoterResult?.count || 0), 10);
   const engagementRate = totalUsers > 0 ? uniqueVoterCount / totalUsers : 0;
 
-  const now = new Date();
-  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-
-  const [thisMonth, lastMonth] = await Promise.all([
-    db('proposals').where('created_at', '>=', thisMonthStart).count('id as count').first().then(r => parseInt(String(r?.count || 0), 10)),
-    db('proposals').where('created_at', '>=', lastMonthStart).where('created_at', '<', lastMonthEnd).count('id as count').first().then(r => parseInt(String(r?.count || 0), 10)),
-  ]);
+  const thisMonth = parseInt(String(monthlyResult?.this_month || 0), 10);
+  const lastMonth = parseInt(String(monthlyResult?.last_month || 0), 10);
 
   const recentActivity = await db('audit_logs')
     .select('id', 'action', 'entity_type', 'user_id', 'created_at')
@@ -134,28 +131,31 @@ export async function getUsers(page: number = 1, limit: number = 20): Promise<{ 
   const db = getDatabase();
   const offset = (page - 1) * limit;
 
-  const countResult = await db('users').count('id as total').first();
+  const [countResult, users] = await Promise.all([
+    db('users').count('id as total').first(),
+    db('users')
+      .select('id', 'email', 'name', 'role', 'created_at')
+      .orderBy('created_at', 'desc')
+      .limit(limit)
+      .offset(offset),
+  ]);
+
   const total = parseInt(String(countResult?.total || 0), 10);
 
-  const users = await db('users')
-    .select('id', 'email', 'name', 'role', 'created_at')
-    .orderBy('created_at', 'desc')
-    .limit(limit)
-    .offset(offset);
+  const userIds = users.map((u: { id: string }) => u.id);
 
-  const userIds = users.map(u => u.id);
-
-  const proposalCounts = await db('proposals')
-    .select('author_id')
-    .count('id as count')
-    .whereIn('author_id', userIds)
-    .groupBy('author_id');
-
-  const voteCounts = await db('votes')
-    .select('user_id')
-    .count('id as count')
-    .whereIn('user_id', userIds)
-    .groupBy('user_id');
+  const [proposalCounts, voteCounts] = await Promise.all([
+    db('proposals')
+      .select('author_id')
+      .count('id as count')
+      .whereIn('author_id', userIds)
+      .groupBy('author_id'),
+    db('votes')
+      .select('user_id')
+      .count('id as count')
+      .whereIn('user_id', userIds)
+      .groupBy('user_id'),
+  ]);
 
   const proposalCountMap: Record<string, number> = {};
   for (const row of proposalCounts) {
@@ -209,7 +209,7 @@ export async function getAuditLogs(
   const total = parseInt(String(countResult?.total || 0), 10);
 
   const rows = await db('audit_logs')
-    .select('*')
+    .select('id', 'user_id', 'action', 'entity_type', 'entity_id', 'metadata', 'created_at')
     .orderBy('created_at', 'desc')
     .limit(limit)
     .offset(offset);

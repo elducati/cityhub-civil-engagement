@@ -12,6 +12,9 @@ export interface Proposal {
   vote_count: number;
   created_at: Date;
   updated_at: Date;
+  category: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface ProposalWithAuthor extends Proposal {
@@ -24,6 +27,9 @@ export interface CreateProposalInput {
   author_id: string;
   status?: ProposalStatus;
   vote_count?: number;
+  category?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface UpdateProposalInput {
@@ -39,7 +45,7 @@ export class ProposalRepository extends BaseRepository<Proposal> {
 
   async findTrending(limit: number = 10): Promise<Proposal[]> {
     return this.db(this.tableName)
-      .select('id', 'title', 'description', 'author_id', 'status', 'vote_count', 'created_at', 'updated_at')
+      .select('id', 'title', 'description', 'author_id', 'status', 'vote_count', 'created_at', 'updated_at', 'category', 'latitude', 'longitude')
       .where('status', 'OPEN')
       .orderBy('vote_count', 'desc')
       .limit(limit) as Promise<Proposal[]>;
@@ -50,6 +56,7 @@ export class ProposalRepository extends BaseRepository<Proposal> {
       page?: number;
       limit?: number;
       status?: ProposalStatus;
+      category?: string;
       sort?: 'created_at' | 'vote_count';
       search?: string;
     },
@@ -69,7 +76,10 @@ export class ProposalRepository extends BaseRepository<Proposal> {
         'p.status',
         'p.vote_count',
         'p.created_at',
-        'p.updated_at'
+        'p.updated_at',
+        'p.category',
+        'p.latitude',
+        'p.longitude'
       )
       .from(`${this.tableName} as p`);
 
@@ -80,6 +90,11 @@ export class ProposalRepository extends BaseRepository<Proposal> {
 
     if (params.status) {
       baseQuery.where('p.status', params.status);
+    }
+
+    if (params.category) {
+      baseQuery.where('p.category', params.category);
+      countQuery = countQuery.where('category', params.category);
     }
 
     if (params.search) {
@@ -117,13 +132,16 @@ export class ProposalRepository extends BaseRepository<Proposal> {
           'p.vote_count',
           'p.created_at',
           'p.updated_at',
+          'p.category',
+          'p.latitude',
+          'p.longitude',
           this.db.raw('CASE WHEN v.id IS NOT NULL THEN true ELSE false END as user_vote')
         );
     }
 
     const rows = await query;
 
-    const proposals = rows.map((row: { id: string; title: string; description: string; author_id: string; status: ProposalStatus; vote_count: number; created_at: Date; updated_at: Date; user_vote?: boolean }) => ({
+    const proposals = rows.map((row: { id: string; title: string; description: string; author_id: string; status: ProposalStatus; vote_count: number; created_at: Date; updated_at: Date; user_vote?: boolean; category?: string | null; latitude?: number | null; longitude?: number | null }) => ({
       id: row.id,
       title: row.title,
       description: row.description,
@@ -133,6 +151,9 @@ export class ProposalRepository extends BaseRepository<Proposal> {
       created_at: row.created_at,
       updated_at: row.updated_at,
       userVote: currentUserId ? !!row.user_vote : false,
+      category: row.category || null,
+      latitude: row.latitude || null,
+      longitude: row.longitude || null,
     }));
 
     return {
@@ -157,6 +178,9 @@ export class ProposalRepository extends BaseRepository<Proposal> {
         'p.vote_count',
         'p.created_at',
         'p.updated_at',
+        'p.category',
+        'p.latitude',
+        'p.longitude',
         'u.email as author_email'
       )
       .from(`${this.tableName} as p`)
@@ -172,6 +196,9 @@ export class ProposalRepository extends BaseRepository<Proposal> {
       author_id: input.author_id,
       status: input.status || 'OPEN',
       vote_count: input.vote_count || 0,
+      category: input.category || null,
+      latitude: input.latitude || null,
+      longitude: input.longitude || null,
     });
   }
 

@@ -1,9 +1,3 @@
-export interface ApiError {
-  error: string;
-  message: string;
-  statusCode?: number;
-}
-
 class ApiClient {
   private authToken: string | null = null;
 
@@ -58,18 +52,25 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const error: ApiError = await response.json().catch(() => ({
-          error: 'Unknown Error',
-          message: 'An unexpected error occurred',
-        }));
-        throw new Error(error.message || error.error);
+        const body = await response.json().catch(() => ({}));
+        const message = body?.error?.message || body?.error || body?.message || 'An unexpected error occurred';
+        throw new Error(message as string);
       }
 
       if (response.status === 204) {
         return {} as T;
       }
 
-      return response.json();
+      const body = await response.json();
+
+      if (body && typeof body === 'object' && 'success' in body) {
+        if (!body.success) {
+          throw new Error(body?.error?.message || 'An unexpected error occurred');
+        }
+        return body.data as T;
+      }
+
+      return body as T;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('Request timed out. Please try again.');

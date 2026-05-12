@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatRelativeDate } from '@/lib/utils';
 import { Check, X, CheckCircle, Filter, Download, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
+import { api } from '@/lib/api';
 
 function StatusBadge({ status }: { status: string }) {
   const styles = {
@@ -35,6 +36,26 @@ export default function AdminProposalsPage() {
     updateProposal({ proposalId, input: { status } }, {
       onSuccess: () => refetch(),
     });
+  };
+
+  const handleExport = async () => {
+    try {
+      const token = api.getAuthToken();
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${baseUrl}/api/proposals/export/csv`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'proposals.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+    }
   };
 
   if (isLoading) {
@@ -81,9 +102,9 @@ export default function AdminProposalsPage() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
-            <Button className="rounded-full" disabled>
+            <Button className="rounded-full" onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
-              Export
+              Export CSV
             </Button>
           </div>
         </div>

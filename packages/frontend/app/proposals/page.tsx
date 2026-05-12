@@ -13,6 +13,33 @@ interface ProposalsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
+const categoryLabels: Record<string, string> = {
+  infrastructure: 'Infrastructure',
+  environment: 'Environment',
+  safety: 'Public Safety',
+  transportation: 'Transportation',
+  community: 'Community',
+  other: 'Other',
+};
+
+const categoryColors: Record<string, string> = {
+  infrastructure: 'bg-blue-100 text-blue-700',
+  environment: 'bg-green-100 text-green-700',
+  safety: 'bg-red-100 text-red-700',
+  transportation: 'bg-amber-100 text-amber-700',
+  community: 'bg-purple-100 text-purple-700',
+  other: 'bg-gray-100 text-gray-700',
+};
+
+function CategoryBadge({ category }: { category: string | null }) {
+  if (!category) return null;
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${categoryColors[category] || 'bg-gray-100 text-gray-700'}`}>
+      {categoryLabels[category] || category}
+    </span>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   const styles = {
     OPEN: 'bg-success text-white',
@@ -46,17 +73,23 @@ export default async function ProposalsPage({ searchParams }: ProposalsPageProps
   const params = await searchParams;
   const page = Number(params.page) || 1;
   const status = typeof params.status === 'string' ? params.status as 'OPEN' | 'CLOSED' | 'ARCHIVED' : undefined;
+  const category = typeof params.category === 'string' ? params.category : undefined;
   const search = typeof params.search === 'string' ? params.search : undefined;
   const sort = typeof params.sort === 'string' ? params.sort as 'createdAt' | 'voteCount' : undefined;
 
-  const queryParams: ProposalQueryParams = { page, status, search, sort };
+  const queryParams: ProposalQueryParams = { page, status, category, search, sort };
   const { data: proposals, pagination } = await getProposals(queryParams);
 
-  const filters = [
+  const statusFilters = [
     { label: 'All', value: undefined },
     { label: 'Open', value: 'OPEN' },
     { label: 'Closed', value: 'CLOSED' },
     { label: 'Archived', value: 'ARCHIVED' },
+  ];
+
+  const categoryFilters = [
+    { label: 'All Categories', value: undefined, key: 'cat-all' },
+    ...Object.entries(categoryLabels).map(([key, label]) => ({ label, value: key, key })),
   ];
 
   return (
@@ -72,23 +105,43 @@ export default async function ProposalsPage({ searchParams }: ProposalsPageProps
           </Link>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-8">
-          {filters.map((filter) => {
-            const isActive = status === filter.value || (!status && !filter.value);
-            return (
-              <Link
-                key={filter.label}
-                href={`/proposals${filter.value ? `?status=${filter.value}` : ''}`}
-                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-primary text-white shadow-elevation-1'
-                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-                }`}
-              >
-                {filter.label}
-              </Link>
-            );
-          })}
+        <div className="space-y-3 mb-8">
+          <div className="flex flex-wrap gap-2">
+            {statusFilters.map((filter) => {
+              const isActive = status === filter.value || (!status && !filter.value);
+              return (
+                <Link
+                  key={filter.label}
+                  href={filter.value ? `/proposals?status=${filter.value}${category ? `&category=${category}` : ''}` : `/proposals${category ? `?category=${category}` : ''}`}
+                  className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
+                    isActive
+                      ? 'bg-primary text-white shadow-elevation-1'
+                      : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                  }`}
+                >
+                  {filter.label}
+                </Link>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categoryFilters.map((filter) => {
+              const isActive = category === filter.value || (!category && !filter.value);
+              return (
+                <Link
+                  key={filter.key}
+                  href={filter.value ? `/proposals?category=${filter.value}${status ? `&status=${status}` : ''}` : `/proposals${status ? `?status=${status}` : ''}`}
+                  className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                    isActive
+                      ? 'bg-secondary text-white shadow-elevation-1'
+                      : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                  }`}
+                >
+                  {filter.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
         {proposals.length > 0 ? (
@@ -98,7 +151,10 @@ export default async function ProposalsPage({ searchParams }: ProposalsPageProps
                 <Card className="h-full bg-surface-container rounded-3xl border-none shadow-elevation-1 hover:shadow-elevation-2 hover:scale-[1.02] transition-all duration-300 cursor-pointer">
                   <CardContent className="p-6 flex flex-col h-full">
                     <div className="flex justify-between items-start mb-3">
-                      <StatusBadge status={proposal.status} />
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={proposal.status} />
+                        {proposal.category && <CategoryBadge category={proposal.category} />}
+                      </div>
                       <VoteCount count={proposal.voteCount} />
                     </div>
                     <h3 className="text-lg font-semibold text-on-surface mb-2 line-clamp-2">{proposal.title}</h3>
@@ -128,10 +184,14 @@ export default async function ProposalsPage({ searchParams }: ProposalsPageProps
           <div className="flex justify-center gap-2 mt-12">
             {Array.from({ length: pagination.totalPages }, (_, i) => {
               const isActive = pagination.page === i + 1;
+              const params = new URLSearchParams();
+              params.set('page', String(i + 1));
+              if (status) params.set('status', status);
+              if (category) params.set('category', category);
               return (
                 <Link
                   key={i + 1}
-                  href={`/proposals?page=${i + 1}${status ? `&status=${status}` : ''}`}
+                  href={`/proposals?${params.toString()}`}
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-all ${
                     isActive
                       ? 'bg-primary text-white shadow-elevation-1'
