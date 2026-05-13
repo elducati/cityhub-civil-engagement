@@ -293,6 +293,7 @@ The service layer handles the conversion via `mapRow()`, keeping DB internals fr
 | 2026-05 | Dashboard charts | Pure SVG BarChart, DonutChart, TrendChart — no external dependencies |
 | 2026-05 | Auth live-reload | `useSyncExternalStore` module-level generation counter — all components react to login/logout instantly |
 | 2026-05 | SEO meta tags | Dynamic per-page titles via `metadata` export (SSR) and `usePageTitle` hook (client) |
+| 2026-05 | feat: add Public Roadmap page showing Planned and Implemented proposals on a timeline with status badges and voting stats |
 
 ## License
 

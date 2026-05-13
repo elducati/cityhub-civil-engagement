@@ -14,10 +14,6 @@ export abstract class BaseRepository<T extends { id: string }> {
     return this.db(this.tableName).where('id', id).first() as Promise<T | null>;
   }
 
-  async findAll(): Promise<T[]> {
-    return this.db(this.tableName).select('*') as Promise<T[]>;
-  }
-
   async create(data: Partial<T>): Promise<T> {
     const [result] = await this.db(this.tableName).insert(data).returning('*');
     return result as T;
@@ -34,10 +30,5 @@ export abstract class BaseRepository<T extends { id: string }> {
   async delete(id: string): Promise<boolean> {
     const count = await this.db(this.tableName).where('id', id).del();
     return count > 0;
-  }
-
-  async exists(id: string): Promise<boolean> {
-    const result = await this.db(this.tableName).where('id', id).first();
-    return !!result;
   }
 }

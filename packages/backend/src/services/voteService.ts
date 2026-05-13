@@ -43,12 +43,15 @@ export async function castVote(proposalId: string, userId: string): Promise<{
     throw createError('Already voted on this proposal', 409);
   }
 
-  await db('votes').insert({
-    proposal_id: proposalId,
-    user_id: userId,
+  await db.transaction(async (trx) => {
+    await trx('votes').insert({
+      proposal_id: proposalId,
+      user_id: userId,
+    });
+
+    await proposalRepository.incrementVoteCount(proposalId, trx);
   });
 
-  await proposalRepository.incrementVoteCount(proposalId);
   await setUserVoted(userId, proposalId);
   await incrementVoteBuffer(proposalId);
 
@@ -94,8 +97,12 @@ export async function removeVote(proposalId: string, userId: string): Promise<{
     throw createError('Vote not found', 404);
   }
 
-  await db('votes').where('id', vote.id).del();
-  await proposalRepository.decrementVoteCount(proposalId);
+  await db.transaction(async (trx) => {
+    await trx('votes').where('id', vote.id).del();
+
+    await proposalRepository.decrementVoteCount(proposalId, trx);
+  });
+
   await removeUserVote(userId, proposalId);
 
   await publishVoteMessage({

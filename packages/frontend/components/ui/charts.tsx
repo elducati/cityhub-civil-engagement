@@ -10,21 +10,23 @@ export function BarChart({ data, maxValue }: BarChartProps) {
   const barHeight = 28;
   const gap = 8;
   const totalHeight = data.length * (barHeight + gap) - gap;
-  const labelWidth = 100;
-  const chartWidth = 400;
+  // ~7.5px per character at 12px font size
+  const labelWidth = Math.max(100, ...data.map(d => d.label.length * 7.5));
+  const chartWidth = 300;
+  const rightMargin = 40;
 
   return (
-    <svg width="100%" height={totalHeight + 20} viewBox={`0 0 ${labelWidth + chartWidth + 60} ${totalHeight + 20}`} className="overflow-visible">
+    <svg width="100%" height={totalHeight + 20} viewBox={`0 0 ${labelWidth + chartWidth + rightMargin} ${totalHeight + 20}`} className="overflow-visible">
       {data.map((d, i) => {
         const barW = (d.value / max) * chartWidth;
         const y = i * (barHeight + gap);
         return (
           <g key={d.label}>
-            <text x="0" y={y + barHeight / 2 + 4} textAnchor="end" className="fill-on-surface-variant text-xs" fontSize="12">
+            <text x={labelWidth - 4} y={y + barHeight / 2 + 4} textAnchor="end" className="fill-on-surface-variant text-xs" fontSize="12">
               {d.label}
             </text>
             <rect
-              x={labelWidth + 8}
+              x={labelWidth + 4}
               y={y}
               width={Math.max(barW, 4)}
               height={barHeight}
@@ -33,7 +35,7 @@ export function BarChart({ data, maxValue }: BarChartProps) {
               opacity="0.9"
             />
             <text
-              x={labelWidth + 16 + Math.max(barW, 4)}
+              x={labelWidth + 8 + Math.max(barW, 4)}
               y={y + barHeight / 2 + 4}
               className="fill-on-surface font-medium text-xs"
               fontSize="12"

@@ -1,10 +1,12 @@
-import amqp, { Channel } from 'amqplib';
+import * as amqp from 'amqplib';
 import { config } from '../config';
+import { logger } from './logger';
 
 type AmqpConnection = Awaited<ReturnType<typeof amqp.connect>>;
+type AmqpChannel = Awaited<ReturnType<AmqpConnection['createChannel']>>;
 
 let connection: AmqpConnection | null = null;
-let channel: Channel | null = null;
+let channel: AmqpChannel | null = null;
 
 const QUEUE_NAME = 'votes';
 
@@ -36,6 +38,29 @@ export async function publishVoteMessage(message: VoteMessage): Promise<void> {
   if (channel) {
     channel.sendToQueue(QUEUE_NAME, Buffer.from(JSON.stringify(payload)), { persistent: true });
   }
+}
+
+export async function startVoteConsumer(): Promise<void> {
+  if (!channel) {
+    await connectToQueue();
+  }
+
+  if (!channel) throw new Error('Failed to establish RabbitMQ channel');
+
+  await channel.consume(QUEUE_NAME, async (msg) => {
+    if (msg !== null) {
+      try {
+        const voteData: VoteMessage = JSON.parse(msg.content.toString());
+        logger.info({ proposalId: voteData.proposalId, action: voteData.action }, 'Vote message consumed');
+        channel?.ack(msg);
+      } catch (error) {
+        logger.error({ error }, 'Error processing vote message');
+        channel?.nack(msg, false, false);
+      }
+    }
+  });
+
+  logger.info('Vote consumer started');
 }
 
 export async function closeQueue(): Promise<void> {

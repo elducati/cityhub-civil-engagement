@@ -1,18 +1,16 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  getProposals, 
-  getTrendingProposals, 
-  getProposalById, 
-  createProposal, 
-  updateProposal, 
+import {
+  getProposals,
+  getTrendingProposals,
+  getProposalById,
+  createProposal,
+  updateProposal,
   deleteProposal,
   voteForProposal,
   removeVote,
   type ProposalQueryParams,
-  type Proposal,
-  type ProposalDetail,
   type CreateProposalInput,
   type UpdateProposalInput
 } from '@/lib/proposals';

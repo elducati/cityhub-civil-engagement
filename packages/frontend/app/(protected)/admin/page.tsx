@@ -146,8 +146,11 @@ export default function AdminDashboardPage() {
               <BarChart
                 data={[
                   { label: 'Open', value: stats.proposalsByStatus.OPEN, color: 'bg-success' },
-                  { label: 'Closed', value: stats.proposalsByStatus.CLOSED, color: 'bg-on-surface-variant' },
-                  { label: 'Archived', value: stats.proposalsByStatus.ARCHIVED, color: 'bg-outline' },
+                  { label: 'Under Review', value: stats.proposalsByStatus.UNDER_REVIEW, color: 'bg-secondary' },
+                  { label: 'Feasibility', value: stats.proposalsByStatus.FEASIBILITY, color: 'bg-primary' },
+                  { label: 'Planned', value: stats.proposalsByStatus.PLANNED, color: 'bg-warning' },
+                  { label: 'Implemented', value: stats.proposalsByStatus.IMPLEMENTED, color: 'bg-success' },
+                  { label: 'Rejected', value: stats.proposalsByStatus.REJECTED, color: 'bg-error' },
                 ]}
               />
             </CardContent>

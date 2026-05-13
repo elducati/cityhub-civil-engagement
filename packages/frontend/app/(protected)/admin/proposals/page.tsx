@@ -1,40 +1,47 @@
 'use client';
 
 import { useProposals, useUpdateProposal } from '@/hooks/useProposals';
+import type { ProposalStatus } from '@/types/proposal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatRelativeDate } from '@/lib/utils';
-import { Check, X, CheckCircle, Filter, Download, RefreshCw } from 'lucide-react';
+import { Check, X, CheckCircle, Download, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { TableRowSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 function StatusBadge({ status }: { status: string }) {
-  const styles = {
+  const styles: Record<string, string> = {
     OPEN: 'bg-success text-white',
-    CLOSED: 'bg-on-surface-variant text-on-surface',
-    ARCHIVED: 'bg-outline text-on-surface-variant',
+    UNDER_REVIEW: 'bg-secondary text-white',
+    FEASIBILITY: 'bg-primary text-white',
+    PLANNED: 'bg-warning text-white',
+    IMPLEMENTED: 'bg-success text-white',
+    REJECTED: 'bg-error text-white',
   };
-  const labels = {
+  const labels: Record<string, string> = {
     OPEN: 'Open',
-    CLOSED: 'Closed',
-    ARCHIVED: 'Archived',
+    UNDER_REVIEW: 'Under Review',
+    FEASIBILITY: 'Feasibility',
+    PLANNED: 'Planned',
+    IMPLEMENTED: 'Implemented',
+    REJECTED: 'Rejected',
   };
   return (
-    <Badge className={`${styles[status as keyof typeof styles]} rounded-full`}>
-      {labels[status as keyof typeof labels]}
+    <Badge className={`${styles[status as keyof typeof styles] || 'bg-outline text-on-surface-variant'} rounded-full`}>
+      {labels[status as keyof typeof labels] || status}
     </Badge>
   );
 }
 
 export default function AdminProposalsPage() {
-  const [filter, setFilter] = useState<'OPEN' | 'CLOSED' | 'ARCHIVED' | undefined>('OPEN');
+  const [filter, setFilter] = useState<ProposalStatus | undefined>('OPEN');
   const { data, isLoading, error, refetch } = useProposals({ status: filter, limit: 50 });
   const { mutate: updateProposal, isPending } = useUpdateProposal();
 
-  const handleStatusChange = (proposalId: string, status: 'CLOSED' | 'ARCHIVED') => {
-    updateProposal({ proposalId, input: { status } }, {
+  const handleStatusChange = (proposalId: string, status: ProposalStatus, rejection_reason?: string) => {
+    updateProposal({ proposalId, input: { status, rejection_reason } }, {
       onSuccess: () => refetch(),
     });
   };
@@ -104,10 +111,13 @@ export default function AdminProposalsPage() {
     );
   }
 
-  const filters = [
-    { label: 'Open', value: 'OPEN' as const },
-    { label: 'Closed', value: 'CLOSED' as const },
-    { label: 'Archived', value: 'ARCHIVED' as const },
+  const filters: Array<{ label: string; value: ProposalStatus | undefined }> = [
+    { label: 'Open', value: 'OPEN' },
+    { label: 'Under Review', value: 'UNDER_REVIEW' },
+    { label: 'Feasibility', value: 'FEASIBILITY' },
+    { label: 'Planned', value: 'PLANNED' },
+    { label: 'Implemented', value: 'IMPLEMENTED' },
+    { label: 'Rejected', value: 'REJECTED' },
     { label: 'All', value: undefined },
   ];
 
@@ -176,33 +186,78 @@ export default function AdminProposalsPage() {
                     <td className="px-6 py-4 text-sm font-medium text-on-surface">{proposal.voteCount}</td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant">{formatRelativeDate(proposal.createdAt)}</td>
                     <td className="px-6 py-4 space-x-2">
-                      {proposal.status === 'OPEN' && (
-                        <>
+                        {proposal.status === 'OPEN' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="success"
+                              className="rounded-full"
+                              disabled={isPending}
+                              onClick={() => handleStatusChange(proposal.id, 'UNDER_REVIEW')}
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              Start Review
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              className="rounded-full"
+                              disabled={isPending}
+                              onClick={() => handleStatusChange(proposal.id, 'REJECTED', 'Not feasible')}
+                            >
+                              <X className="w-3 h-3 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {proposal.status === 'UNDER_REVIEW' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="rounded-full"
+                              disabled={isPending}
+                              onClick={() => handleStatusChange(proposal.id, 'FEASIBILITY')}
+                            >
+                              Pass to Feasibility
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              className="rounded-full"
+                              disabled={isPending}
+                              onClick={() => handleStatusChange(proposal.id, 'REJECTED', 'After review')}
+                            >
+                              <X className="w-3 h-3 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {proposal.status === 'FEASIBILITY' && (
                           <Button
                             size="sm"
                             variant="success"
                             className="rounded-full"
                             disabled={isPending}
-                            onClick={() => handleStatusChange(proposal.id, 'CLOSED')}
+                            onClick={() => handleStatusChange(proposal.id, 'PLANNED')}
                           >
-                            <Check className="w-3 h-3 mr-1" />
-                            Approve
+                            Mark as Planned
                           </Button>
+                        )}
+                        {proposal.status === 'PLANNED' && (
                           <Button
                             size="sm"
-                            variant="danger"
+                            variant="success"
                             className="rounded-full"
                             disabled={isPending}
-                            onClick={() => handleStatusChange(proposal.id, 'ARCHIVED')}
+                            onClick={() => handleStatusChange(proposal.id, 'IMPLEMENTED')}
                           >
-                            <X className="w-3 h-3 mr-1" />
-                            Reject
+                            Mark Implemented
                           </Button>
-                        </>
-                      )}
-                      {proposal.status !== 'OPEN' && (
-                        <span className="text-xs text-on-surface-variant italic">No actions available</span>
-                      )}
+                        )}
+                        {(proposal.status === 'IMPLEMENTED' || proposal.status === 'REJECTED') && (
+                          <span className="text-xs text-on-surface-variant italic">Final — no actions</span>
+                        )}
                     </td>
                   </tr>
                 ))}

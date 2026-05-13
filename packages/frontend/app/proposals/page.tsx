@@ -5,13 +5,13 @@ export const metadata = {
 };
 
 import Link from 'next/link';
-import { getProposals } from '@/lib/proposals';
+import { getProposals, type ProposalStatus } from '@/lib/proposals';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeDate } from '@/lib/utils';
 import type { ProposalQueryParams } from '@/lib/proposals';
-import { FileText, ArrowRight, ClipboardList } from 'lucide-react';
+import { ArrowRight, ClipboardList } from 'lucide-react';
 
 interface ProposalsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -45,19 +45,25 @@ function CategoryBadge({ category }: { category: string | null }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles = {
+  const styles: Record<string, string> = {
     OPEN: 'bg-success text-white',
-    CLOSED: 'bg-on-surface-variant text-on-surface',
-    ARCHIVED: 'bg-outline text-on-surface-variant',
+    UNDER_REVIEW: 'bg-secondary text-white',
+    FEASIBILITY: 'bg-primary text-white',
+    PLANNED: 'bg-warning text-white',
+    IMPLEMENTED: 'bg-success text-white',
+    REJECTED: 'bg-error text-white',
   };
-  const labels = {
+  const labels: Record<string, string> = {
     OPEN: 'Open',
-    CLOSED: 'Closed',
-    ARCHIVED: 'Archived',
+    UNDER_REVIEW: 'Under Review',
+    FEASIBILITY: 'Feasibility',
+    PLANNED: 'Planned',
+    IMPLEMENTED: 'Implemented',
+    REJECTED: 'Rejected',
   };
   return (
-    <Badge className={`${styles[status as keyof typeof styles]} rounded-full`}>
-      {labels[status as keyof typeof labels]}
+    <Badge className={`${styles[status as keyof typeof styles] || 'bg-outline text-on-surface-variant'} rounded-full`}>
+      {labels[status as keyof typeof labels] || status}
     </Badge>
   );
 }
@@ -76,7 +82,7 @@ function VoteCount({ count }: { count: number }) {
 export default async function ProposalsPage({ searchParams }: ProposalsPageProps) {
   const params = await searchParams;
   const page = Number(params.page) || 1;
-  const status = typeof params.status === 'string' ? params.status as 'OPEN' | 'CLOSED' | 'ARCHIVED' : undefined;
+  const status = typeof params.status === 'string' ? params.status as ProposalStatus : undefined;
   const category = typeof params.category === 'string' ? params.category : undefined;
   const search = typeof params.search === 'string' ? params.search : undefined;
   const sort = typeof params.sort === 'string' ? params.sort as 'createdAt' | 'voteCount' : undefined;
@@ -84,11 +90,14 @@ export default async function ProposalsPage({ searchParams }: ProposalsPageProps
   const queryParams: ProposalQueryParams = { page, status, category, search, sort };
   const { data: proposals, pagination } = await getProposals(queryParams);
 
-  const statusFilters = [
+  const statusFilters: Array<{ label: string; value: ProposalStatus | undefined }> = [
     { label: 'All', value: undefined },
     { label: 'Open', value: 'OPEN' },
-    { label: 'Closed', value: 'CLOSED' },
-    { label: 'Archived', value: 'ARCHIVED' },
+    { label: 'Under Review', value: 'UNDER_REVIEW' },
+    { label: 'Feasibility', value: 'FEASIBILITY' },
+    { label: 'Planned', value: 'PLANNED' },
+    { label: 'Implemented', value: 'IMPLEMENTED' },
+    { label: 'Rejected', value: 'REJECTED' },
   ];
 
   const categoryFilters = [

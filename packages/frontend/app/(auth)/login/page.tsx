@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Building2 } from 'lucide-react';
 
@@ -23,7 +22,7 @@ export default function LoginPage() {
     try {
       await login(formData);
       router.push('/dashboard');
-    } catch (err) {
+    } catch {
       // Error handled by useAuth hook
     }
   };

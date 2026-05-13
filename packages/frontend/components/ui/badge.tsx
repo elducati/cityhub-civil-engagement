@@ -29,13 +29,16 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
-function StatusChip({ status }: { status: 'OPEN' | 'CLOSED' | 'ARCHIVED' }) {
-  const config = {
-    OPEN: { label: 'Open', variant: 'success' as const },
-    CLOSED: { label: 'Closed', variant: 'default' as const },
-    ARCHIVED: { label: 'Archived', variant: 'outline' as const },
+function StatusChip({ status }: { status: string }) {
+  const config: Record<string, { label: string; variant: 'success' | 'default' | 'secondary' | 'warning' | 'outline' | 'error' }> = {
+    OPEN: { label: 'Open', variant: 'success' },
+    UNDER_REVIEW: { label: 'Under Review', variant: 'secondary' },
+    FEASIBILITY: { label: 'Feasibility', variant: 'default' },
+    PLANNED: { label: 'Planned', variant: 'warning' },
+    IMPLEMENTED: { label: 'Implemented', variant: 'success' },
+    REJECTED: { label: 'Rejected', variant: 'error' },
   };
-  const { label, variant } = config[status];
+  const { label, variant } = config[status] || { label: status, variant: 'outline' as const };
   return <Badge variant={variant}>{label}</Badge>;
 }
 

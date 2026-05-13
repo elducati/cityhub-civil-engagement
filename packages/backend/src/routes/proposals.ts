@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import * as proposalService from '../services/proposalService';
 import * as voteService from '../services/voteService';
+import * as commentService from '../services/commentService';
 import { authenticate, requireRole, optionalAuth, AuthRequest } from '../middleware/auth';
 import { getDatabase } from '../config/database';
 
@@ -18,7 +19,8 @@ const createProposalSchema = z.object({
 const updateProposalSchema = z.object({
   title: z.string().min(3).max(500).optional(),
   description: z.string().min(10).max(10000).optional(),
-  status: z.enum(['OPEN', 'CLOSED', 'ARCHIVED']).optional(),
+  status: z.enum(['OPEN', 'UNDER_REVIEW', 'FEASIBILITY', 'PLANNED', 'IMPLEMENTED', 'REJECTED']).optional(),
+  rejection_reason: z.string().min(1).max(2000).optional(),
 });
 
 router.get('/export/csv', authenticate, requireRole('ADMIN', 'MODERATOR'), async (_req: AuthRequest, res: Response, next) => {
@@ -56,7 +58,7 @@ router.get('/trending', async (_req, res: Response, next) => {
 router.get('/', optionalAuth, async (req: AuthRequest, res: Response, next) => {
   try {
     const { page, limit } = req.safeQuery;
-    const status = req.query.status as 'OPEN' | 'CLOSED' | 'ARCHIVED' | undefined;
+    const status = req.query.status as 'OPEN' | 'UNDER_REVIEW' | 'FEASIBILITY' | 'PLANNED' | 'IMPLEMENTED' | 'REJECTED' | undefined;
     const category = req.query.category as string | undefined;
     const sort = (req.query.sort as 'createdAt' | 'voteCount') || 'createdAt';
     const search = req.query.search as string | undefined;
@@ -123,6 +125,30 @@ router.delete('/:id/vote', authenticate, async (req: AuthRequest, res: Response,
   try {
     const result = await voteService.removeVote(req.params.id, req.user!.id);
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/:id/comments', optionalAuth, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const comments = await commentService.getComments(req.params.id);
+    res.json(comments);
+  } catch (error) {
+    next(error);
+  }
+});
+
+const createCommentSchema = z.object({
+  body: z.string().min(1).max(5000),
+  parentId: z.string().uuid().optional(),
+});
+
+router.post('/:id/comments', authenticate, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { body, parentId } = createCommentSchema.parse(req.body);
+    const comment = await commentService.createComment(req.params.id, req.user!.id, body, parentId);
+    res.status(201).json(comment);
   } catch (error) {
     next(error);
   }

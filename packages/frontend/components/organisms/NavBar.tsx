@@ -28,6 +28,12 @@ export function NavBar() {
               >
                 Proposals
               </Link>
+              <Link
+                href="/roadmap"
+                className="px-4 py-2 rounded-full text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+              >
+                Roadmap
+              </Link>
               {isAuthenticated && (
                 <>
                   <Link

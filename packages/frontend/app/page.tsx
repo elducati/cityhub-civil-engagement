@@ -18,10 +18,6 @@ import {
   ArrowRight,
   Star,
   ChevronRight,
-  LayoutDashboard,
-  HandCoins,
-  Users,
-  Calendar,
 } from 'lucide-react';
 
 export const revalidate = 300;

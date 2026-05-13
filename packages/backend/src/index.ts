@@ -13,7 +13,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { responseEnvelope } from './middleware/responseEnvelope';
 import { validatePagination } from './middleware/validatePagination';
 import { correlationIdMiddleware, requestLoggingMiddleware } from './middleware/correlationId';
-import { connectToQueue } from './services/queueService';
+import { connectToQueue, startVoteConsumer } from './services/queueService';
 import { logger } from './services/logger';
 
 const app = express();
@@ -53,7 +53,8 @@ async function initServices(): Promise<void> {
 
     try {
       await connectToQueue();
-      logger.info('RabbitMQ connected');
+      await startVoteConsumer();
+      logger.info('RabbitMQ connected and vote consumer started');
     } catch (err) {
       logger.warn({ err }, 'RabbitMQ connection failed (optional)');
     }

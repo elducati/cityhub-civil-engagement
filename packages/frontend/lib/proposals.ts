@@ -2,7 +2,7 @@ import { api } from './api';
 import type { Proposal, ProposalDetail, CreateProposalInput, UpdateProposalInput } from '@/types/proposal';
 import type { ProposalListResponse } from '@/types/api';
 
-export type ProposalStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
+export type ProposalStatus = 'OPEN' | 'UNDER_REVIEW' | 'FEASIBILITY' | 'PLANNED' | 'IMPLEMENTED' | 'REJECTED';
 
 export interface ProposalQueryParams {
   page?: number;

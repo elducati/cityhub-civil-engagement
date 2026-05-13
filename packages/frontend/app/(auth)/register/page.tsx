@@ -44,7 +44,9 @@ export default function RegisterPage() {
         name: formData.name,
       });
       router.push('/dashboard');
-    } catch (err) {}
+    } catch {
+      // Error handled by useAuth hook
+    }
   };
 
   return (

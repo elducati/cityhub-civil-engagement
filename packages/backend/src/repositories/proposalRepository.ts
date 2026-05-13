@@ -1,7 +1,8 @@
 import { BaseRepository } from './baseRepository';
+import { Knex } from 'knex';
 import type { PaginationResult } from '../types/express.d';
 
-export type ProposalStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
+export type ProposalStatus = 'OPEN' | 'UNDER_REVIEW' | 'FEASIBILITY' | 'PLANNED' | 'IMPLEMENTED' | 'REJECTED';
 
 export interface Proposal {
   id: string;
@@ -202,43 +203,15 @@ export class ProposalRepository extends BaseRepository<Proposal> {
     });
   }
 
-  async updateProposal(proposalId: string, input: UpdateProposalInput): Promise<Proposal | null> {
-    const updateData: Record<string, unknown> = {};
-    if (input.title !== undefined) updateData.title = input.title;
-    if (input.description !== undefined) updateData.description = input.description;
-    if (input.status !== undefined) updateData.status = input.status;
+  incrementVoteCount = async (proposalId: string, trx?: Knex.Transaction): Promise<void> => {
+    const db = trx || this.db;
+    await db(this.tableName).where('id', proposalId).increment('vote_count', 1);
+  };
 
-    return this.update(proposalId, updateData);
-  }
-
-  async incrementVoteCount(proposalId: string): Promise<void> {
-    await this.db(this.tableName).where('id', proposalId).increment('vote_count', 1);
-  }
-
-  async decrementVoteCount(proposalId: string): Promise<void> {
-    await this.db(this.tableName).where('id', proposalId).decrement('vote_count', 1);
-  }
-
-  async countByStatus(): Promise<Record<ProposalStatus, number>> {
-    const counts = await this.db(this.tableName)
-      .select('status')
-      .count('id as count')
-      .groupBy('status');
-
-    const result: Record<ProposalStatus, number> = {
-      OPEN: 0,
-      CLOSED: 0,
-      ARCHIVED: 0,
-    };
-
-    for (const row of counts) {
-      if (row.status in result) {
-        result[row.status as ProposalStatus] = parseInt(String(row.count), 10);
-      }
-    }
-
-    return result;
-  }
+  decrementVoteCount = async (proposalId: string, trx?: Knex.Transaction): Promise<void> => {
+    const db = trx || this.db;
+    await db(this.tableName).where('id', proposalId).decrement('vote_count', 1);
+  };
 }
 
 export const proposalRepository = new ProposalRepository();

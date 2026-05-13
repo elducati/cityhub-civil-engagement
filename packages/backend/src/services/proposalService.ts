@@ -5,7 +5,7 @@ import { getCache, setCache, deleteCache } from './cacheService';
 import { proposalRepository } from '../repositories/proposalRepository';
 import type { PaginationResult } from '../types/express.d';
 
-export type ProposalStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
+export type ProposalStatus = 'OPEN' | 'UNDER_REVIEW' | 'FEASIBILITY' | 'PLANNED' | 'IMPLEMENTED' | 'REJECTED';
 
 export interface Proposal {
   id: string;

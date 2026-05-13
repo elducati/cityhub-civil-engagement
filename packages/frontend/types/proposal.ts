@@ -1,9 +1,11 @@
+export type ProposalStatus = 'OPEN' | 'UNDER_REVIEW' | 'FEASIBILITY' | 'PLANNED' | 'IMPLEMENTED' | 'REJECTED';
+
 export interface Proposal {
   id: string;
   title: string;
   description: string;
   authorId: string;
-  status: 'OPEN' | 'CLOSED' | 'ARCHIVED';
+  status: ProposalStatus;
   voteCount: number;
   createdAt: string;
   updatedAt?: string;
@@ -32,5 +34,6 @@ export interface CreateProposalInput {
 export interface UpdateProposalInput {
   title?: string;
   description?: string;
-  status?: 'OPEN' | 'CLOSED' | 'ARCHIVED';
+  status?: ProposalStatus;
+  rejection_reason?: string;
 }

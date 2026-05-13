@@ -10,8 +10,11 @@ export interface DashboardStats {
   engagementRate: number;
   proposalsByStatus: {
     OPEN: number;
-    CLOSED: number;
-    ARCHIVED: number;
+    UNDER_REVIEW: number;
+    FEASIBILITY: number;
+    PLANNED: number;
+    IMPLEMENTED: number;
+    REJECTED: number;
   };
   usersByRole: {
     USER: number;
@@ -80,7 +83,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     ).first(),
   ]);
 
-  const proposalsByStatus = { OPEN: 0, CLOSED: 0, ARCHIVED: 0 };
+  const proposalsByStatus = { OPEN: 0, UNDER_REVIEW: 0, FEASIBILITY: 0, PLANNED: 0, IMPLEMENTED: 0, REJECTED: 0 };
   for (const row of statusCounts) {
     if (row.status in proposalsByStatus) {
       proposalsByStatus[row.status as keyof typeof proposalsByStatus] = parseInt(String(row.count), 10);

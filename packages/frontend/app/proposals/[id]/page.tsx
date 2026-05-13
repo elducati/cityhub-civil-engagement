@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useProposal, useVote, useRemoveVote } from '@/hooks/useProposals';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatRelativeDate } from '@/lib/utils';
-import { ArrowLeft, Search, Share2, FileText, ArrowRight, MapPin } from 'lucide-react';
+import { ArrowLeft, Search, Share2, FileText, MapPin, MessageSquare } from 'lucide-react';
+import { useComments, useCreateComment } from '@/hooks/useComments';
+import { useAuth } from '@/hooks/useAuth';
 
 const categoryLabels: Record<string, string> = {
   infrastructure: 'Infrastructure',
@@ -30,19 +33,25 @@ const categoryColors: Record<string, string> = {
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const styles = {
+  const styles: Record<string, string> = {
     OPEN: 'bg-success text-white',
-    CLOSED: 'bg-on-surface-variant text-on-surface',
-    ARCHIVED: 'bg-outline text-on-surface-variant',
+    UNDER_REVIEW: 'bg-secondary text-white',
+    FEASIBILITY: 'bg-primary text-white',
+    PLANNED: 'bg-warning text-white',
+    IMPLEMENTED: 'bg-success text-white',
+    REJECTED: 'bg-error text-white',
   };
-  const labels = {
+  const labels: Record<string, string> = {
     OPEN: 'Open',
-    CLOSED: 'Closed',
-    ARCHIVED: 'Archived',
+    UNDER_REVIEW: 'Under Review',
+    FEASIBILITY: 'Feasibility',
+    PLANNED: 'Planned',
+    IMPLEMENTED: 'Implemented',
+    REJECTED: 'Rejected',
   };
   return (
-    <Badge className={`${styles[status as keyof typeof styles]} rounded-full`}>
-      {labels[status as keyof typeof labels]}
+    <Badge className={`${styles[status as keyof typeof styles] || 'bg-outline text-on-surface-variant'} rounded-full`}>
+      {labels[status as keyof typeof labels] || status}
     </Badge>
   );
 }
@@ -64,6 +73,11 @@ export default function ProposalDetailPage() {
   const removeVoteMutation = useRemoveVote();
 
   usePageTitle(proposal ? proposal.title : 'Proposal');
+  const { data: comments, isLoading: commentsLoading } = useComments(proposalId);
+  const createCommentMut = useCreateComment(proposalId);
+  const { user } = useAuth();
+  const [commentBody, setCommentBody] = useState('');
+  const [replyTo, setReplyTo] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -103,6 +117,17 @@ export default function ProposalDetailPage() {
     }
   };
 
+  const handleAddComment = async () => {
+    if (!commentBody.trim()) return;
+    try {
+      await createCommentMut.mutateAsync({ body: commentBody, parentId: replyTo || undefined });
+      setCommentBody('');
+      setReplyTo(null);
+    } catch (err) {
+      console.error('Failed to add comment:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-surface-base py-12">
       <div className="max-w-4xl mx-auto px-4">
@@ -130,10 +155,10 @@ export default function ProposalDetailPage() {
               <p className="text-on-surface-variant whitespace-pre-wrap leading-relaxed">{proposal.description}</p>
             </div>
 
-            {proposal.latitude && proposal.longitude && (
+            {proposal.latitude != null && proposal.longitude != null && (
               <div className="mb-6 flex items-center gap-2 text-sm text-on-surface-variant">
                 <MapPin className="w-4 h-4 text-primary" />
-                <span>{proposal.latitude.toFixed(4)}, {proposal.longitude.toFixed(4)}</span>
+                <span>{Number(proposal.latitude).toFixed(4)}, {Number(proposal.longitude).toFixed(4)}</span>
               </div>
             )}
 
@@ -170,6 +195,83 @@ export default function ProposalDetailPage() {
                 )}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Comments Section */}
+        <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1 mb-6">
+          <CardContent className="p-6">
+            <h3 className="font-semibold text-on-surface mb-4 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              Discussion ({comments?.length || 0})
+            </h3>
+
+            {user && (
+              <div className="mb-6 space-y-2">
+                {replyTo && (
+                  <div className="flex items-center gap-2 text-sm text-on-surface-variant mb-2">
+                    Replying to a comment
+                    <button onClick={() => setReplyTo(null)} className="text-primary hover:underline text-xs">Cancel</button>
+                  </div>
+                )}
+                <textarea
+                  value={commentBody}
+                  onChange={(e) => setCommentBody(e.target.value)}
+                  placeholder="Share your thoughts..."
+                  rows={3}
+                  className="flex w-full rounded-xl border border-outline bg-surface-base p-4 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 resize-none"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleAddComment}
+                    disabled={!commentBody.trim() || createCommentMut.isPending}
+                    className="rounded-full"
+                    size="sm"
+                  >
+                    {createCommentMut.isPending ? 'Posting...' : 'Post Comment'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {commentsLoading ? (
+              <div className="animate-pulse space-y-3">
+                {[1, 2].map((i) => <div key={i} className="h-16 bg-surface-container-high rounded-xl" />)}
+              </div>
+            ) : comments && comments.length > 0 ? (
+              <div className="space-y-4">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="space-y-2">
+                    <div className="p-4 bg-surface-base rounded-xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-medium text-on-surface">{comment.authorEmail}</span>
+                        <span className="text-xs text-on-surface-variant">{formatRelativeDate(comment.createdAt)}</span>
+                      </div>
+                      <p className="text-sm text-on-surface-variant">{comment.body}</p>
+                      {user && (
+                        <button
+                          onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                          className="text-xs text-primary hover:underline mt-2"
+                        >
+                          Reply
+                        </button>
+                      )}
+                    </div>
+                    {comment.replies && comment.replies.map((reply) => (
+                      <div key={reply.id} className="ml-8 p-4 bg-surface-base rounded-xl border-l-2 border-primary/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm font-medium text-on-surface">{reply.authorEmail}</span>
+                          <span className="text-xs text-on-surface-variant">{formatRelativeDate(reply.createdAt)}</span>
+                        </div>
+                        <p className="text-sm text-on-surface-variant">{reply.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-on-surface-variant text-center py-6">No comments yet. Start the discussion!</p>
+            )}
           </CardContent>
         </Card>
 

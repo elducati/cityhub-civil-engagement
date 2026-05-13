@@ -7,8 +7,11 @@ export interface DashboardStats {
   engagementRate: number;
   proposalsByStatus: {
     OPEN: number;
-    CLOSED: number;
-    ARCHIVED: number;
+    UNDER_REVIEW: number;
+    FEASIBILITY: number;
+    PLANNED: number;
+    IMPLEMENTED: number;
+    REJECTED: number;
   };
   usersByRole: {
     USER: number;
