@@ -18,6 +18,4 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, enti
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
 
--- Composite index for proposal listing with filters
-CREATE INDEX IF NOT EXISTS idx_proposals_status_created ON proposals(status, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_proposals_status_votes ON proposals(status, vote_count DESC);
+-- Composite index for proposal listing with filters\nCREATE INDEX IF NOT EXISTS idx_proposals_status_created ON proposals(status, created_at DESC);\nCREATE INDEX IF NOT EXISTS idx_proposals_status_votes ON proposals(status, vote_count DESC);\n\n-- Full Text Search Index\nCREATE INDEX IF NOT EXISTS idx_proposals_fts ON proposals USING GIN (to_tsvector('english', coalesce(title,'') || ' ' || coalesce(description,'')));

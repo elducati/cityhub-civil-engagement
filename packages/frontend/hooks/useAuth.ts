@@ -129,6 +129,8 @@ export function useAuth() {
       });
       toast.success('Signed out');
       bumpGeneration();
+      // Use native window.location.href to force a full page reload and clear memory state
+      window.location.href = '/';
     } catch {
       setState(prev => ({
         ...prev,

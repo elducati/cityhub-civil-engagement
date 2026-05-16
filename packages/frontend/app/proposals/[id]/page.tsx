@@ -61,6 +61,10 @@ export default function ProposalDetailPage() {
   }
 
   const handleVote = async () => {
+    if (!user) {
+      toast.error('Please sign in to vote');
+      return;
+    }
     try {
       await voteMutation.mutateAsync(proposalId);
     } catch (error) {
@@ -69,6 +73,10 @@ export default function ProposalDetailPage() {
   };
 
   const handleRemoveVote = async () => {
+    if (!user) {
+      toast.error('Please sign in to remove your vote');
+      return;
+    }
     try {
       await removeVoteMutation.mutateAsync(proposalId);
     } catch (error) {
@@ -130,7 +138,7 @@ export default function ProposalDetailPage() {
                 </div>
               </div>
               <div>
-                {proposal.userHasVoted ? (
+                {proposal.userHasVoted && user ? (
                   <Button
                     variant="outline"
                     onClick={handleRemoveVote}
