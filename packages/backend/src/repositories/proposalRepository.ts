@@ -101,7 +101,7 @@ export class ProposalRepository extends BaseRepository<Proposal> {
     if (params.search) {
       const searchTerm = params.search;
       baseQuery.whereRaw(
-        "to_tsvector('english', coalesce(p.title, '') || ' ' || coalesce(p.description, '')) @@ plainto_tsquery('english, ?)",
+        "to_tsvector('english', coalesce(p.title, '') || ' ' || coalesce(p.description, '')) @@ plainto_tsquery('english', ?)",
         [searchTerm]
       );
       countQuery = countQuery.whereRaw(

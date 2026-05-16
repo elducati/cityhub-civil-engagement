@@ -5,17 +5,6 @@ const MAX_PAGE = 1000;
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 10;
 
-declare global {
-  namespace Express {
-    interface Request {
-      safeQuery: {
-        page: number;
-        limit: number;
-      };
-    }
-  }
-}
-
 export function validatePagination(req: Request, _res: Response, next: NextFunction): void {
   const rawPage = parseInt(req.query.page as string, 10);
   const rawLimit = parseInt(req.query.limit as string, 10);

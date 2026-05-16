@@ -5,8 +5,11 @@ export interface ProposalAnalytics {
   total: number;
   byStatus: {
     OPEN: number;
-    CLOSED: number;
-    ARCHIVED: number;
+    UNDER_REVIEW: number;
+    FEASIBILITY: number;
+    PLANNED: number;
+    IMPLEMENTED: number;
+    REJECTED: number;
   };
   thisMonth: number;
   lastMonth: number;
@@ -34,10 +37,13 @@ export async function getProposalAnalytics(): Promise<ProposalAnalytics> {
     .count('id as count')
     .groupBy('status');
 
-  const byStatus = {
+  const byStatus: ProposalAnalytics['byStatus'] = {
     OPEN: 0,
-    CLOSED: 0,
-    ARCHIVED: 0,
+    UNDER_REVIEW: 0,
+    FEASIBILITY: 0,
+    PLANNED: 0,
+    IMPLEMENTED: 0,
+    REJECTED: 0,
   };
 
   for (const row of statusCounts) {

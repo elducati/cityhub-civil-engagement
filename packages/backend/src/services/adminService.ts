@@ -1,5 +1,5 @@
 import { getDatabase } from '../config/database';
-import { getCache, setCache } from './cacheService';
+import { getCache, setCache, deleteCache } from './cacheService';
 import { userRepository } from '../repositories/userRepository';
 import { createError } from '../middleware/errorHandler';
 
@@ -194,6 +194,7 @@ export async function updateUserRole(userId: string, newRole: 'USER' | 'MODERATO
   }
 
   await db_update_user_role(userId, newRole);
+  await deleteCache('admin:dashboard');
 }
 
 async function db_update_user_role(userId: string, role: string): Promise<void> {

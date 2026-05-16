@@ -8,11 +8,16 @@ export function initDatabase(): Knex {
     return db;
   }
 
+  const dbUrl = new URL(config.DATABASE_URL);
   db = knex({
     client: 'pg',
     connection: {
-      connectionString: config.DATABASE_URL,
-      ssl: false,
+      host: dbUrl.hostname,
+      port: parseInt(dbUrl.port, 10),
+      database: dbUrl.pathname.slice(1),
+      user: dbUrl.username,
+      password: dbUrl.password,
+      ssl: config.DATABASE_SSL,
     },
     pool: {
       min: 2,

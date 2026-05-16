@@ -52,9 +52,15 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        const message = body?.error?.message || body?.error || body?.message || 'An unexpected error occurred';
-        throw new Error(message as string);
+        let message = `Request failed (${response.status})`;
+        try {
+          const body = await response.json();
+          message = body?.error?.message || body?.error || body?.message || message;
+        } catch {
+          const text = await response.text().catch(() => '');
+          if (text) message = `${message}: ${text.slice(0, 200)}`;
+        }
+        throw new Error(message);
       }
 
       if (response.status === 204) {

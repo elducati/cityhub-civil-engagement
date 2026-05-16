@@ -15,6 +15,7 @@ import { validatePagination } from './middleware/validatePagination';
 import { correlationIdMiddleware, requestLoggingMiddleware } from './middleware/correlationId';
 import { connectToQueue, startVoteConsumer } from './services/queueService';
 import { logger } from './services/logger';
+import { getCache, setCache } from './services/cacheService';
 
 const app = express();
 
@@ -30,8 +31,15 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false,
 }));
+const allowedOrigins = config.FRONTEND_URL.split(',');
 app.use(cors({
-  origin: config.FRONTEND_URL,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
@@ -96,6 +104,31 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/proposals', proposalRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/metrics', metricsRoutes);
+
+app.get('/api/stats', async (_req: Request, res: Response) => {
+  const cached = await getCache<{
+    totalProposals: number;
+    totalVotes: number;
+    totalUsers: number;
+  }>('public:stats');
+  if (cached) {
+    res.json(cached);
+    return;
+  }
+  const db = getDatabase();
+  const [proposalCount, voteCount, userCount] = await Promise.all([
+    db('proposals').count('id as total').first(),
+    db('votes').count('id as total').first(),
+    db('users').count('id as total').first(),
+  ]);
+  const stats = {
+    totalProposals: parseInt(String(proposalCount?.total || 0), 10),
+    totalVotes: parseInt(String(voteCount?.total || 0), 10),
+    totalUsers: parseInt(String(userCount?.total || 0), 10),
+  };
+  await setCache('public:stats', stats, 300);
+  res.json(stats);
+});
 
 app.get('/', (_req: Request, res: Response) => {
   res.json({ message: 'CityHub API v1.0.0', version: '1.0.0' });

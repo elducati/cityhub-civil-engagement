@@ -1,13 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../services/logger';
 
-declare global {
-  interface Request {
-    correlationId?: string;
-    startTime?: number;
-  }
-}
-
 export function correlationIdMiddleware(req: Request, _res: Response, next: NextFunction): void {
   const correlationId = req.headers['x-correlation-id'] as string || generateCorrelationId();
   req.correlationId = correlationId;

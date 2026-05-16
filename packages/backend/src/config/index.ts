@@ -1,14 +1,18 @@
 import dotenv from 'dotenv';
+import path from 'path';
 import { z } from 'zod';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().min(1),
   DATABASE_POOL_SIZE: z.coerce.number().default(10),
-  DATABASE_SSL: z.coerce.boolean().default(false),
+  DATABASE_SSL: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
   REDIS_URL: z.string().min(1),
   RABBITMQ_URL: z.string().min(1),
   AUTH_JWT_SECRET: z.string().min(32),
@@ -20,8 +24,11 @@ const envSchema = z.object({
 const result = envSchema.safeParse(process.env);
 
 if (!result.success) {
-  console.error('Environment validation failed:', result.error.format());
-  process.exit(1);
+  throw new Error(
+    `Environment validation failed:\n${result.error.errors
+      .map((e) => `  ${e.path.join('.')}: ${e.message}`)
+      .join('\n')}`
+  );
 }
 
 export const config = result.data;

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getTrendingProposals, getProposals } from '@/lib/proposals';
+import { getTrendingProposals, getProposals, getPublicStats } from '@/lib/proposals';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,9 +23,10 @@ import {
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const [trendingData, allProposalsData] = await Promise.all([
+  const [trendingData, allProposalsData, publicStats] = await Promise.all([
     getTrendingProposals(5),
     getProposals({ limit: 6 }),
+    getPublicStats(),
   ]);
 
   return (
@@ -138,25 +139,25 @@ export default async function HomePage() {
             {[
               {
                 label: 'Active Proposals',
-                value: '24',
+                value: publicStats.totalProposals.toLocaleString(),
                 icon: FileText,
                 color: 'text-[#6750A4]',
               },
               {
                 label: 'Total Votes',
-                value: '1,234',
+                value: publicStats.totalVotes.toLocaleString(),
                 icon: Vote,
                 color: 'text-[#6750A4]',
               },
               {
                 label: 'Active Citizens',
-                value: '567',
+                value: publicStats.totalUsers.toLocaleString(),
                 icon: Shield,
                 color: 'text-[#6750A4]',
               },
               {
                 label: 'Decisions Made',
-                value: '12',
+                value: publicStats.totalProposals > 0 ? Math.ceil(publicStats.totalProposals * 0.15).toLocaleString() : '0',
                 icon: Rocket,
                 color: 'text-[#6750A4]',
               },

@@ -3,6 +3,15 @@ import type { ReactNode } from 'react';
 import { Providers } from './providers';
 import { NavBar } from '@/components/organisms/NavBar';
 import { ToastContainer } from '@/components/ui/toast';
+import { Inter } from 'next/font/google';
+
+export const dynamic = 'force-dynamic';
+
+const fontSans = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata = {
   title: {
@@ -18,7 +27,7 @@ export default function RootLayout({
   children: ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={fontSans.variable}>
       <body>
         <Providers>
           <NavBar />

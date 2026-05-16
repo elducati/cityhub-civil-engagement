@@ -8,11 +8,35 @@ interface RateLimitConfig {
   keyPrefix?: string;
 }
 
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
 const defaultConfigs: Record<string, RateLimitConfig> = {
   auth: { windowMs: 60 * 1000, maxRequests: 10, keyPrefix: 'rl:auth' },
   api: { windowMs: 60 * 1000, maxRequests: 100, keyPrefix: 'rl:api' },
   voting: { windowMs: 60 * 1000, maxRequests: 30, keyPrefix: 'rl:vote' },
 };
+
+const inMemoryStore = new Map<string, RateLimitEntry>();
+
+function inMemoryCheck(ip: string, config: RateLimitConfig): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const key = `${config.keyPrefix}:${ip}`;
+  let entry = inMemoryStore.get(key);
+
+  if (!entry || now >= entry.resetAt) {
+    entry = { count: 0, resetAt: now + config.windowMs };
+    inMemoryStore.set(key, entry);
+  }
+
+  entry.count++;
+  return {
+    allowed: entry.count <= config.maxRequests,
+    remaining: Math.max(0, config.maxRequests - entry.count),
+  };
+}
 
 export function rateLimiter(type: keyof typeof defaultConfigs = 'api') {
   const config = defaultConfigs[type];
@@ -42,7 +66,21 @@ export function rateLimiter(type: keyof typeof defaultConfigs = 'api') {
 
       next();
     } catch (error) {
-      logger.error({ error }, 'Rate limiter error');
+      logger.warn({ error }, 'Rate limiter Redis unavailable, using in-memory fallback');
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const { allowed, remaining } = inMemoryCheck(ip, config);
+
+      if (!allowed) {
+        res.status(429).json({
+          error: 'Too Many Requests',
+          message: `Rate limit exceeded. Max ${config.maxRequests} requests per ${config.windowMs / 1000} seconds`,
+        });
+        return;
+      }
+
+      res.setHeader('X-RateLimit-Limit', config.maxRequests.toString());
+      res.setHeader('X-RateLimit-Remaining', remaining.toString());
+      res.setHeader('X-RateLimit-Fallback', 'true');
       next();
     }
   };

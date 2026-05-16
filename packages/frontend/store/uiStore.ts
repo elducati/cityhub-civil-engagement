@@ -41,12 +41,16 @@ export const useUIStore = create<UIStore>((set) => ({
   setLoading: (loading) => set({ isLoading: loading }),
   
   addNotification: (type, message) =>
-    set((state) => ({
-      notifications: [
+    set((state) => {
+      const MAX_NOTIFICATIONS = 5;
+      const next = [
         ...state.notifications,
         { id: crypto.randomUUID(), type, message },
-      ],
-    })),
+      ];
+      return {
+        notifications: next.length > MAX_NOTIFICATIONS ? next.slice(-MAX_NOTIFICATIONS) : next,
+      };
+    }),
   
   removeNotification: (id) =>
     set((state) => ({

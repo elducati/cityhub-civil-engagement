@@ -13,7 +13,6 @@ const proposalSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(100, 'Title must be less than 100 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters').max(5000, 'Description must be less than 5000 characters'),
   category: z.string().min(1, 'Please select a category'),
-  tags: z.array(z.string()).min(1, 'Add at least one tag').max(5, 'Maximum 5 tags allowed'),
   latitude: z.coerce.number().min(-90).max(90).optional().or(z.literal('')),
   longitude: z.coerce.number().min(-180).max(180).optional().or(z.literal('')),
 });
@@ -37,14 +36,11 @@ interface ProposalFormProps {
 
 export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
   const [step, setStep] = useState(1);
-  const [tagInput, setTagInput] = useState('');
 
   const {
     register,
     handleSubmit,
     control,
-    watch,
-    setValue,
     trigger,
     formState: { errors },
   } = useForm<ProposalFormValues>({
@@ -53,16 +49,13 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
       title: '',
       description: '',
       category: '',
-      tags: [],
       latitude: '',
       longitude: '',
     },
   });
 
-  const tags = watch('tags');
-
   const handleNext = async () => {
-    const fieldsToValidate: (keyof ProposalFormValues)[] = step === 1 ? ['title', 'description'] : ['category', 'tags'];
+    const fieldsToValidate: (keyof ProposalFormValues)[] = step === 1 ? ['title', 'description'] : ['category'];
     const isValid = await trigger(fieldsToValidate);
     if (isValid) {
       setStep((s) => s + 1);
@@ -71,18 +64,6 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
 
   const handleBack = () => {
     setStep((s) => s - 1);
-  };
-
-  const handleAddTag = () => {
-    const trimmed = tagInput.trim().toLowerCase();
-    if (trimmed && !tags.includes(trimmed) && tags.length < 5) {
-      setValue('tags', [...tags, trimmed]);
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setValue('tags', tags.filter((t) => t !== tagToRemove));
   };
 
   return (
@@ -161,27 +142,6 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
                 placeholder="Longitude"
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-on-surface">Tags</Label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                placeholder="Add a tag"
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-              />
-              <Button type="button" variant="outline" onClick={handleAddTag} className="rounded-full">Add</Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">
-                  {tag}
-                  <button type="button" onClick={() => handleRemoveTag(tag)} className="ml-1.5 text-on-primary-container hover:opacity-70">×</button>
-                </span>
-              ))}
-            </div>
-            {errors.tags && <p className="text-sm text-error">{errors.tags.message}</p>}
           </div>
           <div className="flex justify-between">
             <Button type="button" variant="outline" onClick={handleBack} className="rounded-full">Back</Button>

@@ -62,7 +62,6 @@ services:
       PORT: 3000
       AUTH_JWT_SECRET: dev-secret-key-minimum-32-characters-required
       AUTH_JWT_EXPIRY: 7d
-      AUTH_SESSION_SECRET: dev-session-secret-minimum-32-chars-required
       FRONTEND_URL: http://localhost:5173
       LOG_LEVEL: info
     ports:

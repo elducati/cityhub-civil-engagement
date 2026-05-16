@@ -25,7 +25,6 @@
   },
   "packageManager": "npm@10.7.0",
   "description": "A civil engagement platform enabling citizens to connect with their local government, submit issues, and participate in community decision-making.",
-  "main": "tailwind.config.js",
   "dependencies": {
     "abort-controller": "^3.0.0",
     "accepts": "^1.3.8",

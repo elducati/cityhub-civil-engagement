@@ -19,9 +19,9 @@ describe('analyticsService', () => {
 
   describe('getProposalAnalytics', () => {
     it('should return cached result if available', async () => {
-      const cachedData = {
+      const cachedData: analyticsService.ProposalAnalytics = {
         total: 10,
-        byStatus: { OPEN: 5, CLOSED: 3, ARCHIVED: 2 },
+        byStatus: { OPEN: 5, UNDER_REVIEW: 3, FEASIBILITY: 2, PLANNED: 0, IMPLEMENTED: 0, REJECTED: 0 },
         thisMonth: 2,
         lastMonth: 1,
       };
@@ -43,8 +43,8 @@ describe('analyticsService', () => {
         select: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockResolvedValue([
           { status: 'OPEN', count: 5 },
-          { status: 'CLOSED', count: 3 },
-          { status: 'ARCHIVED', count: 2 },
+          { status: 'UNDER_REVIEW', count: 3 },
+          { status: 'FEASIBILITY', count: 2 },
         ]),
         where: jest.fn().mockReturnThis(),
       });
@@ -54,8 +54,8 @@ describe('analyticsService', () => {
 
       expect(result.total).toBe(10);
       expect(result.byStatus.OPEN).toBe(5);
-      expect(result.byStatus.CLOSED).toBe(3);
-      expect(result.byStatus.ARCHIVED).toBe(2);
+      expect(result.byStatus.UNDER_REVIEW).toBe(3);
+      expect(result.byStatus.FEASIBILITY).toBe(2);
       expect(setCache).toHaveBeenCalled();
     });
 

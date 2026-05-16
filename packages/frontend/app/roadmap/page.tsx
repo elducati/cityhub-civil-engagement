@@ -61,7 +61,7 @@ export default async function RoadmapPage() {
             <div className="space-y-8">
               {allProposals.map((proposal, idx) => {
                 const meta = statusMeta[proposal.status];
-                const isFirstInSection = idx === 0 || allProposals[idx - 1]._section !== proposal._section;
+                const isFirstInSection = idx === 0 || allProposals[idx - 1]?._section !== proposal._section;
 
                 return (
                   <div key={proposal.id} className="relative pl-16">

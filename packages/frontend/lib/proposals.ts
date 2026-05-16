@@ -27,8 +27,7 @@ export async function getProposals(params: ProposalQueryParams = {}): Promise<Pr
 }
 
 export async function getTrendingProposals(limit: number = 10): Promise<Proposal[]> {
-  const response = await getProposals({ limit, sort: 'voteCount', status: 'OPEN' });
-  return response.data;
+  return api.get<Proposal[]>(`/api/proposals/trending?limit=${limit}`);
 }
 
 export async function getProposalById(proposalId: string): Promise<ProposalDetail> {
@@ -53,4 +52,16 @@ export async function voteForProposal(proposalId: string): Promise<{ proposalId:
 
 export async function removeVote(proposalId: string): Promise<{ proposalId: string; voteCount: number; userVoted: boolean }> {
   return api.delete(`/api/proposals/${proposalId}/vote`);
+}
+
+export type { CreateProposalInput, UpdateProposalInput }; // re-exported from @/types/proposal
+
+export interface PublicStats {
+  totalProposals: number;
+  totalVotes: number;
+  totalUsers: number;
+}
+
+export async function getPublicStats(): Promise<PublicStats> {
+  return api.get<PublicStats>('/api/stats');
 }

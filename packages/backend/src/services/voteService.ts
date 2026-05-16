@@ -30,10 +30,6 @@ export async function castVote(proposalId: string, userId: string): Promise<{
     throw createError('Already voted on this proposal', 409);
   }
 
-  if (typeof proposal.vote_count !== 'number') {
-    (proposal as any).vote_count = 0;
-  }
-
   const existingVote = await db('votes')
     .where('proposal_id', proposalId)
     .where('user_id', userId)

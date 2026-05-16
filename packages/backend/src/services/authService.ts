@@ -44,26 +44,27 @@ function validateInsertResult<T>(result: T[] | undefined, operation: string): T 
  * Handles database constraint errors with specific messages
  */
 function handleDatabaseError(error: unknown, context: string): never {
+  const err = error as { message?: string; code?: string };
   logger.error(
-    { error: error.message, code: error.code, context },
+    { error: err.message, code: err.code, context },
     `Database error in ${context}`
   );
 
   // PostgreSQL unique constraint violation
-  if ((error as any).code === '23505') {
-    if (error.message.includes('email')) {
+  if (err.code === '23505') {
+    if (err.message?.includes('email')) {
       throw createError('This email is already registered. Try logging in instead.', 409);
     }
     throw createError('This record already exists.', 409);
   }
 
   // Foreign key constraint
-  if ((error as any).code === '23503') {
+  if (err.code === '23503') {
     throw createError('Invalid reference. Please check your input.', 400);
   }
 
   // Connection pool exhausted or timeout
-  if ((error as any).message?.includes('timeout') || (error as any).message?.includes('pool')) {
+  if (err.message?.includes('timeout') || err.message?.includes('pool')) {
     throw createError('Database is temporarily unavailable. Please try again.', 503);
   }
 
@@ -154,10 +155,9 @@ export async function registerUser(input: RegisterInput): Promise<{
         .returning(['id', 'email', 'role']);
 
       user = validateInsertResult(result, 'user insert');
-    } catch (error: any) {
-      // If it's a known API error, rethrow
-      if (error.statusCode) throw error;
-      // Otherwise handle as database error
+    } catch (error) {
+      const apiError = error as { statusCode?: number };
+      if (apiError.statusCode) throw error;
       handleDatabaseError(error, 'user insert');
     }
 
@@ -199,11 +199,10 @@ export async function registerUser(input: RegisterInput): Promise<{
       token,
     };
   } catch (error) {
-    // If it's an API error, rethrow
-    if ((error as any).statusCode) throw error;
-    // Otherwise convert to generic error
+    const apiError = error as { statusCode?: number; message: string; stack?: string };
+    if (apiError.statusCode) throw error;
     logger.error(
-      { error: (error as Error).message, stack: (error as Error).stack },
+      { error: apiError.message, stack: apiError.stack },
       'Unexpected error in registerUser'
     );
     throw createError(
@@ -276,11 +275,10 @@ export async function loginUser(input: LoginInput): Promise<{
       token,
     };
   } catch (error) {
-    // If it's an API error, rethrow
-    if ((error as any).statusCode) throw error;
-    // Otherwise convert to generic error
+    const apiError = error as { statusCode?: number; message: string };
+    if (apiError.statusCode) throw error;
     logger.error(
-      { error: (error as Error).message },
+      { error: apiError.message },
       'Unexpected error in loginUser'
     );
     throw createError('Login failed. Please try again later.', 500);
@@ -328,7 +326,7 @@ export async function validateToken(token: string): Promise<AuthUser | null> {
 
 function generateToken(user: { id: string; email: string; role: string }): string {
   try {
-    const options: any = { expiresIn: config.AUTH_JWT_EXPIRY };
+    const options: jwt.SignOptions = { expiresIn: config.AUTH_JWT_EXPIRY as jwt.SignOptions['expiresIn'] };
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       config.AUTH_JWT_SECRET,

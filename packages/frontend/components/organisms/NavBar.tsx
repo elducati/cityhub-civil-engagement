@@ -48,9 +48,9 @@ export function NavBar() {
                   >
                     Dashboard
                   </Link>
-                  {user?.role === 'ADMIN' && (
+                  {(user?.role === 'ADMIN' || user?.role === 'MODERATOR') && (
                     <Link
-                      href="/admin/proposals"
+                      href="/dashboard"
                       className="px-4 py-2 rounded-full text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
                     >
                       Admin

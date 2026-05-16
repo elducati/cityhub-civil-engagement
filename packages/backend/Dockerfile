@@ -1,7 +1,7 @@
 # Stage 1: Base
 FROM node:20-alpine AS base
 WORKDIR /app
-RUN apk add --no-cache dumb-init tini
+RUN apk add --no-cache tini
 ENV NODE_ENV=production
 
 # Stage 2: Development

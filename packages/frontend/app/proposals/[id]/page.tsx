@@ -7,54 +7,12 @@ import { useProposal, useVote, useRemoveVote } from '@/hooks/useProposals';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatRelativeDate } from '@/lib/utils';
-import { ArrowLeft, Search, Share2, FileText, MapPin, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Search, Share2, FileText, MapPin, MessageSquare, Check } from 'lucide-react';
 import { useComments, useCreateComment } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
-
-const categoryLabels: Record<string, string> = {
-  infrastructure: 'Infrastructure',
-  environment: 'Environment',
-  safety: 'Public Safety',
-  transportation: 'Transportation',
-  community: 'Community',
-  other: 'Other',
-};
-
-const categoryColors: Record<string, string> = {
-  infrastructure: 'bg-blue-100 text-blue-700',
-  environment: 'bg-green-100 text-green-700',
-  safety: 'bg-red-100 text-red-700',
-  transportation: 'bg-amber-100 text-amber-700',
-  community: 'bg-purple-100 text-purple-700',
-  other: 'bg-gray-100 text-gray-700',
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    OPEN: 'bg-success text-white',
-    UNDER_REVIEW: 'bg-secondary text-white',
-    FEASIBILITY: 'bg-primary text-white',
-    PLANNED: 'bg-warning text-white',
-    IMPLEMENTED: 'bg-success text-white',
-    REJECTED: 'bg-error text-white',
-  };
-  const labels: Record<string, string> = {
-    OPEN: 'Open',
-    UNDER_REVIEW: 'Under Review',
-    FEASIBILITY: 'Feasibility',
-    PLANNED: 'Planned',
-    IMPLEMENTED: 'Implemented',
-    REJECTED: 'Rejected',
-  };
-  return (
-    <Badge className={`${styles[status as keyof typeof styles] || 'bg-outline text-on-surface-variant'} rounded-full`}>
-      {labels[status as keyof typeof labels] || status}
-    </Badge>
-  );
-}
+import { StatusBadge, CategoryBadge, categoryLabels } from '@/components/ui/badge';
 
 function VoteCount({ count }: { count: number }) {
   return (
@@ -78,6 +36,7 @@ export default function ProposalDetailPage() {
   const { user } = useAuth();
   const [commentBody, setCommentBody] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   if (isLoading) {
     return (
@@ -141,11 +100,7 @@ export default function ProposalDetailPage() {
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
               <div className="flex-1">
                 <StatusBadge status={proposal.status} />
-                {proposal.category && (
-                  <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${categoryColors[proposal.category] || 'bg-gray-100 text-gray-700'}`}>
-                    {categoryLabels[proposal.category] || proposal.category}
-                  </span>
-                )}
+                {proposal.category && <CategoryBadge category={proposal.category} />}
                 <h1 className="text-3xl font-bold text-on-surface mt-3">{proposal.title}</h1>
               </div>
               <VoteCount count={proposal.voteCount} />
@@ -275,30 +230,41 @@ export default function ProposalDetailPage() {
           </CardContent>
         </Card>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1">
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-on-surface mb-2 flex items-center gap-2">
-                <Share2 className="w-5 h-5 text-primary" />
-                Share this proposal
-              </h3>
-              <p className="text-sm text-on-surface-variant mb-4">Help this proposal gain more support by sharing it with others.</p>
-              <Button variant="outline" className="w-full rounded-full">Share</Button>
-            </CardContent>
-          </Card>
-          <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1">
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-on-surface mb-2 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
-                Similar proposals
-              </h3>
-              <p className="text-sm text-on-surface-variant mb-4">Browse other proposals in the same category.</p>
-              <Link href="/proposals">
-                <Button variant="outline" className="w-full rounded-full">View Proposals</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1">
+          <CardContent className="p-6">
+            <h3 className="font-semibold text-on-surface mb-2 flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-primary" />
+              Share this proposal
+            </h3>
+            <p className="text-sm text-on-surface-variant mb-4">Help this proposal gain more support by sharing it with others.</p>
+            <Button
+              variant="outline"
+              className="w-full rounded-full"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(window.location.href);
+                  setShareCopied(true);
+                  setTimeout(() => setShareCopied(false), 2000);
+                } catch {
+                  const input = document.createElement('input');
+                  input.value = window.location.href;
+                  document.body.appendChild(input);
+                  input.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(input);
+                  setShareCopied(true);
+                  setTimeout(() => setShareCopied(false), 2000);
+                }
+              }}
+            >
+              {shareCopied ? (
+                <><Check className="w-4 h-4 mr-1" /> Copied!</>
+              ) : (
+                <>Share</>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

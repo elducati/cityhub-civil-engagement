@@ -273,27 +273,35 @@ Backend defines `Proposal` differently in three layers:
 
 The service layer handles the conversion via `mapRow()`, keeping DB internals from leaking to the API.
 
-## Refactoring History
+## Contributing
 
-| Date | Change | Rationale |
-|------|--------|-----------|
-| 2026-05 | Service-Repository unification | Eliminated duplicated SQL in `proposalService.ts` — delegated all data access to `proposalRepository.ts` |
-| 2026-05 | Redis connection consolidation | Unified 3 separate Redis clients (`cacheService`, `rateLimiter`, `index.ts`) into a shared `config/redis.ts` |
-| 2026-05 | Type deduplication | Removed duplicate interfaces from `lib/auth.ts`, `lib/proposals.ts`, `services/proposalService.ts` — all types now live in `types/` or their canonical location |
-| 2026-05 | Dynamic API URL resolution | Fixed SSR/client hydration mismatch where `API_BASE` was computed once at module init |
-| 2026-05 | Targeted cache invalidation | Replaced aggressive `deleteCachePattern('proposals:*')` on every vote with single-key `deleteCache('proposals:trending:10')` |
-| 2026-05 | Codebase cleanup | Removed ~70 files (build artifacts, compiled test outputs, empty directories, dead code functions) |
-| 2026-05 | Admin dashboard | Full admin panel: dashboard stats, user management, proposal moderation, audit logs, CSV export |
-| 2026-05 | Categories + location | Added category/lat/lng to proposals — migration, API, form, listing filters, detail badge |
-| 2026-05 | Standard API envelope | All responses wrapped in `{success, data, error}` via middleware; frontend client unwraps transparently |
-| 2026-05 | Toast notifications | 4-type toast system with auto-dismiss, wired into all mutations via Zustand store |
-| 2026-05 | Skeleton loading | Card/table skeleton components replacing full-page spinners |
-| 2026-05 | Query bounds validation | Middleware clamps `page` (1-1000) and `limit` (1-100) to prevent DB abuse |
-| 2026-05 | Migration runner | `npm run migrate` applies SQL files in order, tracks in `_migrations` table, idempotent |
-| 2026-05 | Dashboard charts | Pure SVG BarChart, DonutChart, TrendChart — no external dependencies |
-| 2026-05 | Auth live-reload | `useSyncExternalStore` module-level generation counter — all components react to login/logout instantly |
-| 2026-05 | SEO meta tags | Dynamic per-page titles via `metadata` export (SSR) and `usePageTitle` hook (client) |
-| 2026-05 | feat: add Public Roadmap page showing Planned and Implemented proposals on a timeline with status badges and voting stats |
+We welcome contributions! Follow these steps:
+
+1. **Fork** the repository on GitHub.
+2. **Clone** your fork locally:
+   ```bash
+   git clone https://github.com/<your-username>/cityhub-civil-engagement.git
+   ```
+3. **Create a feature branch**:
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+4. **Make changes** and ensure tests pass:
+   ```bash
+   npm test
+   npm run lint
+   ```
+5. **Commit** using conventional commits (e.g., `feat:`, `fix:`, `refactor:`).
+6. **Push** to your fork:
+   ```bash
+   git push -u origin feat/your-feature-name
+   ```
+7. **Open a Pull Request** against the `main` branch with a clear description of your changes.
+
+### Guidelines
+- Write tests for new features (E2E with Playwright for frontend, Jest for backend).
+- Follow the existing code style — the linter will catch most issues.
+- Keep PRs focused on a single concern.
 
 ## License
 

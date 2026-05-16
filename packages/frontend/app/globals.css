@@ -2,16 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 body {
-  font-family: 'Google Sans', Roboto, Inter, sans-serif;
+  font-family: var(--font-sans), 'Google Sans', Roboto, Inter, sans-serif;
   background-color: #FFFBFE;
   background: rgb(255,251,254);
   background: linear-gradient(180deg, #FFFBFE 0%, #F3EDF7 100%);

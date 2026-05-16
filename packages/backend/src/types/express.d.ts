@@ -3,7 +3,13 @@ import type { JwtPayload } from 'jsonwebtoken';
 declare global {
   namespace Express {
     interface Request {
+      correlationId?: string;
+      startTime?: number;
       user?: UserPayload;
+      safeQuery: {
+        page: number;
+        limit: number;
+      };
       query: {
         page?: string;
         limit?: string;

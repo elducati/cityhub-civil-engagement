@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 export default function CreateProposalPage() {
   const router = useRouter();
 
-  const handleSubmit = async (data: { title: string; description: string; category: string; tags: string[]; latitude?: number | string; longitude?: number | string }) => {
+  const handleSubmit = async (data: { title: string; description: string; category: string; latitude?: number | string; longitude?: number | string }) => {
     try {
       await createProposal({
         title: data.title,

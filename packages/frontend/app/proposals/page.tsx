@@ -8,64 +8,13 @@ import Link from 'next/link';
 import { getProposals, type ProposalStatus } from '@/lib/proposals';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge, CategoryBadge, categoryLabels } from '@/components/ui/badge';
 import { formatRelativeDate } from '@/lib/utils';
 import type { ProposalQueryParams } from '@/lib/proposals';
 import { ArrowRight, ClipboardList } from 'lucide-react';
 
 interface ProposalsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
-
-const categoryLabels: Record<string, string> = {
-  infrastructure: 'Infrastructure',
-  environment: 'Environment',
-  safety: 'Public Safety',
-  transportation: 'Transportation',
-  community: 'Community',
-  other: 'Other',
-};
-
-const categoryColors: Record<string, string> = {
-  infrastructure: 'bg-blue-100 text-blue-700',
-  environment: 'bg-green-100 text-green-700',
-  safety: 'bg-red-100 text-red-700',
-  transportation: 'bg-amber-100 text-amber-700',
-  community: 'bg-purple-100 text-purple-700',
-  other: 'bg-gray-100 text-gray-700',
-};
-
-function CategoryBadge({ category }: { category: string | null }) {
-  if (!category) return null;
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${categoryColors[category] || 'bg-gray-100 text-gray-700'}`}>
-      {categoryLabels[category] || category}
-    </span>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    OPEN: 'bg-success text-white',
-    UNDER_REVIEW: 'bg-secondary text-white',
-    FEASIBILITY: 'bg-primary text-white',
-    PLANNED: 'bg-warning text-white',
-    IMPLEMENTED: 'bg-success text-white',
-    REJECTED: 'bg-error text-white',
-  };
-  const labels: Record<string, string> = {
-    OPEN: 'Open',
-    UNDER_REVIEW: 'Under Review',
-    FEASIBILITY: 'Feasibility',
-    PLANNED: 'Planned',
-    IMPLEMENTED: 'Implemented',
-    REJECTED: 'Rejected',
-  };
-  return (
-    <Badge className={`${styles[status as keyof typeof styles] || 'bg-outline text-on-surface-variant'} rounded-full`}>
-      {labels[status as keyof typeof labels] || status}
-    </Badge>
-  );
 }
 
 function VoteCount({ count }: { count: number }) {
