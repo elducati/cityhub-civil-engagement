@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getProposals,
@@ -15,12 +16,26 @@ import {
   type UpdateProposalInput
 } from '@/lib/proposals';
 import { useToast } from './useToast';
+import { broadcastProposalUpdate, broadcastProposalListChanged, listenProposalUpdates } from '@/lib/broadcast';
 
 export function useProposals(params: ProposalQueryParams = {}) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const unlisten = listenProposalUpdates((proposalId) => {
+      if (proposalId) {
+        queryClient.invalidateQueries({ queryKey: ['proposal', proposalId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+    });
+    return unlisten;
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['proposals', params],
     queryFn: () => getProposals(params),
-    staleTime: 30000,
+    staleTime: 15000,
+    refetchInterval: 30000,
   });
 }
 
@@ -33,10 +48,23 @@ export function useTrendingProposals(limit: number = 10) {
 }
 
 export function useProposal(proposalId: string) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const unlisten = listenProposalUpdates((id) => {
+      if (id === proposalId) {
+        queryClient.invalidateQueries({ queryKey: ['proposal', proposalId] });
+      }
+    });
+    return unlisten;
+  }, [queryClient, proposalId]);
+
   return useQuery({
     queryKey: ['proposal', proposalId],
     queryFn: () => getProposalById(proposalId),
     enabled: !!proposalId,
+    staleTime: 15000,
+    refetchInterval: 30000,
   });
 }
 
@@ -48,6 +76,7 @@ export function useCreateProposal() {
     mutationFn: (input: CreateProposalInput) => createProposal(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      broadcastProposalListChanged();
       toast.success('Proposal created successfully');
     },
     onError: (err: Error) => {
@@ -66,6 +95,7 @@ export function useUpdateProposal() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       queryClient.invalidateQueries({ queryKey: ['proposal', variables.proposalId] });
+      broadcastProposalUpdate(variables.proposalId);
       toast.success('Proposal updated');
     },
     onError: (err: Error) => {
@@ -82,6 +112,7 @@ export function useDeleteProposal() {
     mutationFn: (proposalId: string) => deleteProposal(proposalId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      broadcastProposalListChanged();
       toast.success('Proposal deleted');
     },
     onError: (err: Error) => {
@@ -99,6 +130,7 @@ export function useVote() {
     onSuccess: (_, proposalId) => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       queryClient.invalidateQueries({ queryKey: ['proposal', proposalId] });
+      broadcastProposalUpdate(proposalId);
       toast.success('Vote cast');
     },
     onError: (err: Error) => {
@@ -116,6 +148,7 @@ export function useRemoveVote() {
     onSuccess: (_, proposalId) => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       queryClient.invalidateQueries({ queryKey: ['proposal', proposalId] });
+      broadcastProposalUpdate(proposalId);
       toast.success('Vote removed');
     },
     onError: (err: Error) => {

@@ -13,6 +13,7 @@ import { ArrowLeft, Search, Share2, FileText, MapPin, MessageSquare, Check } fro
 import { useComments, useCreateComment } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
 import { StatusBadge, CategoryBadge, categoryLabels } from '@/components/ui/badge';
+import { useToast } from '@/hooks/useToast';
 
 function VoteCount({ count }: { count: number }) {
   return (
@@ -34,6 +35,7 @@ export default function ProposalDetailPage() {
   const { data: comments, isLoading: commentsLoading } = useComments(proposalId);
   const createCommentMut = useCreateComment(proposalId);
   const { user } = useAuth();
+  const toast = useToast();
   const [commentBody, setCommentBody] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
@@ -65,11 +67,15 @@ export default function ProposalDetailPage() {
       toast.error('Please sign in to vote');
       return;
     }
-    try {
-      await voteMutation.mutateAsync(proposalId);
-    } catch (error) {
-      console.error('Failed to vote:', error);
+    if (proposal.author.id === user.id) {
+      toast.error('Cannot vote on your own proposal');
+      return;
     }
+    if (proposal.status !== 'OPEN') {
+      toast.error('This proposal is not open for voting');
+      return;
+    }
+    await voteMutation.mutateAsync(proposalId);
   };
 
   const handleRemoveVote = async () => {
@@ -77,11 +83,11 @@ export default function ProposalDetailPage() {
       toast.error('Please sign in to remove your vote');
       return;
     }
-    try {
-      await removeVoteMutation.mutateAsync(proposalId);
-    } catch (error) {
-      console.error('Failed to remove vote:', error);
+    if (proposal.status !== 'OPEN') {
+      toast.error('This proposal is not open for voting');
+      return;
     }
+    await removeVoteMutation.mutateAsync(proposalId);
   };
 
   const handleAddComment = async () => {
@@ -142,18 +148,18 @@ export default function ProposalDetailPage() {
                   <Button
                     variant="outline"
                     onClick={handleRemoveVote}
-                    disabled={removeVoteMutation.isPending}
+                    disabled={removeVoteMutation.isPending || proposal.status !== 'OPEN'}
                     className="rounded-full"
                   >
-                    {removeVoteMutation.isPending ? 'Removing...' : 'Remove Vote'}
+                    {removeVoteMutation.isPending ? 'Removing...' : proposal.status === 'OPEN' ? 'Remove Vote' : 'Voting Closed'}
                   </Button>
                 ) : (
                   <Button
                     onClick={handleVote}
-                    disabled={voteMutation.isPending}
+                    disabled={voteMutation.isPending || proposal.status !== 'OPEN'}
                     className="rounded-full"
                   >
-                    {voteMutation.isPending ? 'Voting...' : 'Vote for this Proposal'}
+                    {voteMutation.isPending ? 'Voting...' : proposal.status === 'OPEN' ? 'Vote for this Proposal' : 'Voting Closed'}
                   </Button>
                 )}
               </div>
