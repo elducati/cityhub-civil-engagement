@@ -2,6 +2,7 @@ import { getDatabase } from '../config/database';
 import { createError } from '../middleware/errorHandler';
 import { createAuditLog } from './auditService';
 import { getCache, setCache, deleteCache } from './cacheService';
+import { emitProposalCreated, emitProposalUpdated, emitProposalDeleted, emitProposalStatusChanged } from './socketService';
 import { proposalRepository } from '../repositories/proposalRepository';
 import type { PaginationResult } from '../types/express.d';
 
@@ -154,7 +155,9 @@ export async function createProposal(
 
   await deleteCache(`proposals:trending:10`);
 
-  return mapRow({ ...proposal, user_vote: false });
+  const mapped = mapRow({ ...proposal, user_vote: false });
+  emitProposalCreated(mapped as unknown as Record<string, unknown>);
+  return mapped;
 }
 
 export async function updateProposal(
@@ -189,7 +192,12 @@ export async function updateProposal(
 
   await deleteCache(`proposals:trending:10`);
 
-  return mapRow({ ...(proposal || existing), user_vote: false });
+  const mapped = mapRow({ ...(proposal || existing), user_vote: false });
+  if (input.status) {
+    emitProposalStatusChanged(proposalId, input.status);
+  }
+  emitProposalUpdated(mapped as unknown as Record<string, unknown>);
+  return mapped;
 }
 
 export async function deleteProposal(
@@ -217,4 +225,6 @@ export async function deleteProposal(
   });
 
   await deleteCache(`proposals:trending:10`);
+
+  emitProposalDeleted(proposalId);
 }

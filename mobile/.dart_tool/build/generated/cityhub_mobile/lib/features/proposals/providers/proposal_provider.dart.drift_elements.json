@@ -1,0 +1,1 @@
+{"valid_import":true,"imports":[{"uri":"package:riverpod/riverpod.dart","transitive":false},{"uri":"package:cityhub_mobile/core/models/proposal.dart","transitive":false},{"uri":"package:cityhub_mobile/core/repositories/i_proposal_repository.dart","transitive":false},{"uri":"package:cityhub_mobile/core/repositories/proposal_repository.dart","transitive":false}],"elements":[]}

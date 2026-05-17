@@ -14,6 +14,7 @@ import { responseEnvelope } from './middleware/responseEnvelope';
 import { validatePagination } from './middleware/validatePagination';
 import { correlationIdMiddleware, requestLoggingMiddleware } from './middleware/correlationId';
 import { connectToQueue, startVoteConsumer } from './services/queueService';
+import { initSocketServer } from './services/socketService';
 import { logger } from './services/logger';
 import { getCache, setCache } from './services/cacheService';
 
@@ -66,6 +67,8 @@ async function initServices(): Promise<void> {
     } catch (err) {
       logger.warn({ err }, 'RabbitMQ connection failed (optional)');
     }
+
+    initSocketServer();
   } catch (error) {
     logger.error({ error }, 'Failed to initialize services');
   }

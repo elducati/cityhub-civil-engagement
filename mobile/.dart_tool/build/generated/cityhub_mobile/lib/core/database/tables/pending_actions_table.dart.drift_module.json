@@ -1,0 +1,195 @@
+{
+  "elements": {
+    "pending_actions_table": {
+      "id": {
+        "library_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+        "name": "pending_actions_table"
+      },
+      "declaration": {
+        "source_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+        "offset": 42,
+        "name": "PendingActionsTable"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "id",
+          "nameInDart": "id",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+            "offset": 94,
+            "name": "id"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [
+            {
+              "type": "primary",
+              "is_auto_increment": true
+            }
+          ],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "action_type",
+          "nameInDart": "actionType",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+            "offset": 146,
+            "name": "actionType"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "endpoint",
+          "nameInDart": "endpoint",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+            "offset": 187,
+            "name": "endpoint"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "method",
+          "nameInDart": "method",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+            "offset": 226,
+            "name": "method"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "body",
+          "nameInDart": "body",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+            "offset": 263,
+            "name": "body"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "created_at",
+          "nameInDart": "createdAt",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+            "offset": 302,
+            "name": "createdAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "int"
+          },
+          "nullable": false,
+          "nameInSql": "retry_count",
+          "nameInDart": "retryCount",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+            "offset": 345,
+            "name": "retryCount"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "(0)"
+            ]
+          },
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [],
+      "custom_parent_class": null,
+      "fixed_entity_info_name": null,
+      "base_dart_name": "PendingActionsTable",
+      "row_class_name": "PendingActionsTableData",
+      "companion_class_name": null,
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    }
+  },
+  "imports": [
+    "package:drift/drift.dart"
+  ]
+}

@@ -7,6 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
+  SOCKET_PORT: z.coerce.number().default(3001),
   DATABASE_URL: z.string().min(1),
   DATABASE_POOL_SIZE: z.coerce.number().default(10),
   DATABASE_SSL: z

@@ -3,6 +3,7 @@ import { createError } from '../middleware/errorHandler';
 import { createAuditLog } from './auditService';
 import { checkUserVoted, setUserVoted, removeUserVote, incrementVoteBuffer } from './cacheService';
 import { publishVoteMessage } from './queueService';
+import { emitVoteCreated, emitVoteRemoved } from './socketService';
 import { proposalRepository } from '../repositories/proposalRepository';
 
 export async function castVote(proposalId: string, userId: string): Promise<{
@@ -51,6 +52,10 @@ export async function castVote(proposalId: string, userId: string): Promise<{
   await setUserVoted(userId, proposalId);
   await incrementVoteBuffer(proposalId);
 
+  const voteCount = (proposal.vote_count || 0) + 1;
+
+  emitVoteCreated(proposalId, voteCount);
+
   await publishVoteMessage({
     proposalId,
     userId,
@@ -67,7 +72,7 @@ export async function castVote(proposalId: string, userId: string): Promise<{
 
   return {
     proposalId,
-    voteCount: (proposal.vote_count || 0) + 1,
+    voteCount,
     userVoted: true,
   };
 }
@@ -99,6 +104,9 @@ export async function removeVote(proposalId: string, userId: string): Promise<{
     await proposalRepository.decrementVoteCount(proposalId, trx);
   });
 
+  const newVoteCount = Math.max(0, (proposal.vote_count || 0) - 1);
+  emitVoteRemoved(proposalId, newVoteCount);
+
   await removeUserVote(userId, proposalId);
 
   await publishVoteMessage({
@@ -117,7 +125,7 @@ export async function removeVote(proposalId: string, userId: string): Promise<{
 
   return {
     proposalId,
-    voteCount: Math.max(0, (proposal.vote_count || 0) - 1),
+    voteCount: newVoteCount,
     userVoted: false,
   };
 }

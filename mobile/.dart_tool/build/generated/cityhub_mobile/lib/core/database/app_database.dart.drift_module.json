@@ -1,0 +1,68 @@
+{
+  "elements": {
+    "AppDatabase": {
+      "id": {
+        "library_uri": "package:cityhub_mobile/core/database/app_database.dart",
+        "name": "AppDatabase"
+      },
+      "declaration": {
+        "source_uri": "package:cityhub_mobile/core/database/app_database.dart",
+        "offset": 523,
+        "name": "AppDatabase"
+      },
+      "references": [
+        {
+          "library_uri": "package:cityhub_mobile/core/database/tables/proposals_table.dart",
+          "name": "proposals_table"
+        },
+        {
+          "library_uri": "package:cityhub_mobile/core/database/tables/comments_table.dart",
+          "name": "comments_table"
+        },
+        {
+          "library_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+          "name": "users_table"
+        },
+        {
+          "library_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+          "name": "pending_actions_table"
+        }
+      ],
+      "type": "database",
+      "tables": [
+        {
+          "library_uri": "package:cityhub_mobile/core/database/tables/proposals_table.dart",
+          "name": "proposals_table"
+        },
+        {
+          "library_uri": "package:cityhub_mobile/core/database/tables/comments_table.dart",
+          "name": "comments_table"
+        },
+        {
+          "library_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+          "name": "users_table"
+        },
+        {
+          "library_uri": "package:cityhub_mobile/core/database/tables/pending_actions_table.dart",
+          "name": "pending_actions_table"
+        }
+      ],
+      "views": [],
+      "includes": [],
+      "queries": [],
+      "schema_version": 1,
+      "daos": []
+    }
+  },
+  "imports": [
+    "package:drift/drift.dart",
+    "package:drift/native.dart",
+    "package:path_provider/path_provider.dart",
+    "package:path/path.dart",
+    "package:riverpod/riverpod.dart",
+    "package:cityhub_mobile/core/database/tables/proposals_table.dart",
+    "package:cityhub_mobile/core/database/tables/comments_table.dart",
+    "package:cityhub_mobile/core/database/tables/users_table.dart",
+    "package:cityhub_mobile/core/database/tables/pending_actions_table.dart"
+  ]
+}

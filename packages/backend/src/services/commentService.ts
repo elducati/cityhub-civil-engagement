@@ -1,5 +1,6 @@
 import { getDatabase } from '../config/database';
 import { createError } from '../middleware/errorHandler';
+import { emitCommentCreated } from './socketService';
 
 export interface Comment {
   id: string;
@@ -69,7 +70,7 @@ export async function createComment(proposalId: string, authorId: string, body: 
 
   const user = await db('users').select('email').where('id', authorId).first();
 
-  return {
+  const comment: Comment = {
     id: row.id,
     proposalId: row.proposal_id,
     parentId: row.parent_id,
@@ -78,4 +79,8 @@ export async function createComment(proposalId: string, authorId: string, body: 
     body: row.body,
     createdAt: row.created_at,
   };
+
+  emitCommentCreated(proposalId, comment as unknown as Record<string, unknown>);
+
+  return comment;
 }

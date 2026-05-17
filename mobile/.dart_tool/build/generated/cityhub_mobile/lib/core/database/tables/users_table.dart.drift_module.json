@@ -1,0 +1,176 @@
+{
+  "elements": {
+    "users_table": {
+      "id": {
+        "library_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+        "name": "users_table"
+      },
+      "declaration": {
+        "source_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+        "offset": 42,
+        "name": "UsersTable"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "id",
+          "nameInDart": "id",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+            "offset": 86,
+            "name": "id"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "email",
+          "nameInDart": "email",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+            "offset": 119,
+            "name": "email"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "role",
+          "nameInDart": "role",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+            "offset": 155,
+            "name": "role"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": true,
+          "nameInSql": "name",
+          "nameInDart": "name",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+            "offset": 191,
+            "name": "name"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": true,
+          "nameInSql": "created_at",
+          "nameInDart": "createdAt",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+            "offset": 242,
+            "name": "createdAt"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "bool"
+          },
+          "nullable": false,
+          "nameInSql": "synced",
+          "nameInDart": "synced",
+          "declaration": {
+            "source_uri": "package:cityhub_mobile/core/database/tables/users_table.dart",
+            "offset": 297,
+            "name": "synced"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": {
+            "elements": [
+              "const ",
+              {
+                "lexeme": "Constant",
+                "import_uri": "package:drift/src/runtime/query_builder/query_builder.dart"
+              },
+              "(false)"
+            ]
+          },
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [
+        {
+          "type": "primary_key",
+          "columns": [
+            "id"
+          ]
+        }
+      ],
+      "custom_parent_class": null,
+      "fixed_entity_info_name": null,
+      "base_dart_name": "UsersTable",
+      "row_class_name": "UsersTableData",
+      "companion_class_name": null,
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    }
+  },
+  "imports": [
+    "package:drift/drift.dart"
+  ]
+}
