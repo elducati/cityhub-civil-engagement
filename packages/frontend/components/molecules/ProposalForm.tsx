@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin } from 'lucide-react';
+import { MapPin, Tags } from 'lucide-react';
 
 const proposalSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(100, 'Title must be less than 100 characters'),
@@ -15,6 +15,7 @@ const proposalSchema = z.object({
   category: z.string().min(1, 'Please select a category'),
   latitude: z.coerce.number().min(-90).max(90).optional().or(z.literal('')),
   longitude: z.coerce.number().min(-180).max(180).optional().or(z.literal('')),
+  tags: z.string().optional(),
 });
 
 
@@ -32,9 +33,17 @@ const CATEGORIES = [
 interface ProposalFormProps {
   onSubmit: (data: ProposalFormValues) => Promise<void>;
   isLoading?: boolean;
+  initialTags?: string[];
 }
 
-export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
+function parseTags(input: string): string[] {
+  return input
+    .split(',')
+    .map(t => t.trim().toLowerCase())
+    .filter(t => t.length > 0 && t.length <= 50);
+}
+
+export function ProposalForm({ onSubmit, isLoading, initialTags }: ProposalFormProps) {
   const [step, setStep] = useState(1);
 
   const {
@@ -51,6 +60,7 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
       category: '',
       latitude: '',
       longitude: '',
+      tags: '',
     },
   });
 
@@ -103,6 +113,18 @@ export function ProposalForm({ onSubmit, isLoading }: ProposalFormProps) {
 
       {step === 2 && (
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-on-surface flex items-center gap-1">
+              <Tags className="w-4 h-4" />
+              Tags (optional, comma-separated)
+            </Label>
+            <Input
+              {...register('tags')}
+              placeholder="e.g. parks, schools, safety"
+              defaultValue={initialTags?.join(', ') || ''}
+            />
+            <p className="text-xs text-on-surface-variant">Up to 10 tags, max 50 characters each</p>
+          </div>
           <Controller
             name="category"
             control={control}

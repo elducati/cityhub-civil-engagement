@@ -97,6 +97,15 @@ export default async function RoadmapPage() {
                                 <span className="w-1 h-1 rounded-full bg-outline" />
                                 <span>{proposal.voteCount} votes</span>
                               </div>
+                              {proposal.tags && proposal.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {proposal.tags.map((tag) => (
+                                    <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-container-high text-on-surface-variant">
+                                      #{tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             <Badge className={`shrink-0 ${proposal._section === 'Planned' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
                               {proposal._section === 'Planned' ? 'Planned' : 'Done'}

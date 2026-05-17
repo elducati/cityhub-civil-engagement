@@ -5,10 +5,17 @@ import { ProposalForm } from '@/components/molecules/ProposalForm';
 import { createProposal } from '@/lib/proposals';
 import { Card, CardContent } from '@/components/ui/card';
 
+function parseTags(input: string): string[] {
+  return input
+    .split(',')
+    .map(t => t.trim().toLowerCase())
+    .filter(t => t.length > 0 && t.length <= 50);
+}
+
 export default function CreateProposalPage() {
   const router = useRouter();
 
-  const handleSubmit = async (data: { title: string; description: string; category: string; latitude?: number | string; longitude?: number | string }) => {
+  const handleSubmit = async (data: { title: string; description: string; category: string; latitude?: number | string; longitude?: number | string; tags?: string }) => {
     try {
       await createProposal({
         title: data.title,
@@ -16,6 +23,7 @@ export default function CreateProposalPage() {
         category: data.category,
         latitude: data.latitude ? Number(data.latitude) : undefined,
         longitude: data.longitude ? Number(data.longitude) : undefined,
+        tags: data.tags ? parseTags(data.tags) : undefined,
       });
       router.push('/proposals');
     } catch (error) {

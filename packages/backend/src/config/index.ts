@@ -19,7 +19,7 @@ const envSchema = z.object({
   AUTH_JWT_SECRET: z.string().min(32),
   AUTH_JWT_EXPIRY: z.string().default('1h'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
-  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'silent']).default('info'),
 });
 
 const result = envSchema.safeParse(process.env);

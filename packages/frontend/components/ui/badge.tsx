@@ -99,4 +99,12 @@ function CategoryBadge({ category }: { category: string | null }) {
   );
 }
 
-export { Badge, badgeVariants, StatusChip, VoteCounter, StatusBadge, CategoryBadge, categoryLabels, categoryColors };
+function TagBadge({ tag }: { tag: string }) {
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-container-high text-on-surface-variant">
+      #{tag}
+    </span>
+  );
+}
+
+export { Badge, badgeVariants, StatusChip, VoteCounter, StatusBadge, CategoryBadge, TagBadge, categoryLabels, categoryColors };

@@ -12,7 +12,7 @@ import { formatRelativeDate } from '@/lib/utils';
 import { ArrowLeft, Search, Share2, FileText, MapPin, MessageSquare, Check } from 'lucide-react';
 import { useComments, useCreateComment } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
-import { StatusBadge, CategoryBadge, categoryLabels } from '@/components/ui/badge';
+import { StatusBadge, CategoryBadge, TagBadge, categoryLabels } from '@/components/ui/badge';
 import { useToast } from '@/hooks/useToast';
 
 function VoteCount({ count }: { count: number }) {
@@ -128,6 +128,14 @@ export default function ProposalDetailPage() {
               <div className="mb-6 flex items-center gap-2 text-sm text-on-surface-variant">
                 <MapPin className="w-4 h-4 text-primary" />
                 <span>{Number(proposal.latitude).toFixed(4)}, {Number(proposal.longitude).toFixed(4)}</span>
+              </div>
+            )}
+
+            {proposal.tags && proposal.tags.length > 0 && (
+              <div className="mb-6 flex flex-wrap gap-2">
+                {proposal.tags.map((tag) => (
+                  <TagBadge key={tag} tag={tag} />
+                ))}
               </div>
             )}
 

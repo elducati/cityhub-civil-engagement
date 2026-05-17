@@ -13,7 +13,18 @@
     "lint:fix": "npm run lint:fix --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "changelog": "node scripts/changelog.js",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "mobile:init": "cd mobile && flutter pub get && dart run build_runner build --delete-conflicting-outputs",
+    "mobile:test": "cd mobile && flutter test",
+    "mobile:test:integration": "cd mobile && flutter test integration_test/",
+    "mobile:analyze": "cd mobile && flutter analyze",
+    "mobile:build:apk": "cd mobile && flutter build apk --debug",
+    "mobile:build:apk:release": "cd mobile && flutter build apk --release",
+    "mobile:run": "cd mobile && flutter run",
+    "mobile:clean": "cd mobile && flutter clean && flutter pub get",
+    "test:infra:up": "docker compose -f docker-compose.test.yml up -d",
+    "test:infra:down": "docker compose -f docker-compose.test.yml down",
+    "test:integration": "docker compose -f docker-compose.test.yml up -d && powershell -Command \"Start-Sleep -Seconds 8\" && cd mobile && flutter test integration_test/ && cd .. && docker compose -f docker-compose.test.yml down"
   },
   "devDependencies": {
     "husky": "^9.0.0",

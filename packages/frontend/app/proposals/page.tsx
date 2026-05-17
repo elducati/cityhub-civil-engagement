@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { getProposals, type ProposalStatus } from '@/lib/proposals';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { StatusBadge, CategoryBadge, categoryLabels } from '@/components/ui/badge';
+import { StatusBadge, CategoryBadge, TagBadge, categoryLabels } from '@/components/ui/badge';
 import { formatRelativeDate } from '@/lib/utils';
 import type { ProposalQueryParams } from '@/lib/proposals';
 import { ArrowRight, ClipboardList } from 'lucide-react';
@@ -121,6 +121,16 @@ export default async function ProposalsPage({ searchParams }: ProposalsPageProps
                     </div>
                     <h3 className="text-lg font-semibold text-on-surface mb-2 line-clamp-2">{proposal.title}</h3>
                     <p className="text-on-surface-variant text-sm line-clamp-3 mb-4 flex-grow">{proposal.description}</p>
+                    {proposal.tags && proposal.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {proposal.tags.slice(0, 4).map((tag) => (
+                          <TagBadge key={tag} tag={tag} />
+                        ))}
+                        {proposal.tags.length > 4 && (
+                          <span className="text-xs text-on-surface-variant self-center">+{proposal.tags.length - 4}</span>
+                        )}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between pt-4 border-t border-outline">
                       <span className="text-xs text-on-surface-variant">{formatRelativeDate(proposal.createdAt)}</span>
                       <span className="text-xs text-primary font-medium flex items-center gap-1">

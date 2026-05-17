@@ -176,6 +176,18 @@ export default function AdminProposalsPage() {
                     <td className="px-6 py-4">
                       <div className="font-medium text-on-surface line-clamp-1">{proposal.title}</div>
                       <div className="text-xs text-on-surface-variant line-clamp-1">{proposal.description}</div>
+                      {proposal.tags && proposal.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {proposal.tags.slice(0, 3).map((tag) => (
+                            <span key={tag} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-container-high text-on-surface-variant">
+                              #{tag}
+                            </span>
+                          ))}
+                          {proposal.tags.length > 3 && (
+                            <span className="text-[10px] text-on-surface-variant">+{proposal.tags.length - 3}</span>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant font-mono">
                       {proposal.authorId.substring(0, 8)}...

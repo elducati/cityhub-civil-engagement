@@ -1,11 +1,7 @@
-export interface ProposalListResponse {
-  data: import('./proposal').Proposal[];
-  pagination: PaginationResult;
-}
+import type { PaginationResult } from '@cityhub/types';
+import type { Proposal } from './proposal';
 
-export interface PaginationResult {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
+export interface ProposalListResponse {
+  data: Proposal[];
+  pagination: PaginationResult;
 }

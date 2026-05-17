@@ -111,6 +111,7 @@ services:
       - ./packages/frontend/package.json:/app/package.json
       - ./packages/frontend/tailwind.config.js:/app/tailwind.config.js
       - ./packages/frontend/postcss.config.js:/app/postcss.config.js
+      - ./packages/types:/app/node_modules/@cityhub/types
     depends_on:
       - api
 

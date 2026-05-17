@@ -21,6 +21,7 @@ export interface Proposal {
   category: string | null;
   latitude: number | null;
   longitude: number | null;
+  tags: string[];
 }
 
 export interface CreateProposalInput {
@@ -29,12 +30,14 @@ export interface CreateProposalInput {
   category?: string;
   latitude?: number;
   longitude?: number;
+  tags?: string[];
 }
 
 export interface UpdateProposalInput {
   title?: string;
   description?: string;
   status?: ProposalStatus;
+  tags?: string[];
 }
 
 function mapRow(row: {
@@ -50,6 +53,7 @@ function mapRow(row: {
   category?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  tags?: string[] | null;
 }): Proposal {
   return {
     id: row.id,
@@ -64,6 +68,7 @@ function mapRow(row: {
     category: row.category || null,
     latitude: row.latitude || null,
     longitude: row.longitude || null,
+    tags: row.tags || [],
   };
 }
 
@@ -84,6 +89,7 @@ export async function listProposals(
     limit?: number;
     status?: ProposalStatus;
     category?: string;
+    tag?: string;
     sort?: 'createdAt' | 'voteCount';
     search?: string;
   },
@@ -143,6 +149,7 @@ export async function createProposal(
     category: input.category,
     latitude: input.latitude,
     longitude: input.longitude,
+    tags: input.tags,
   });
 
   await createAuditLog({
@@ -179,6 +186,7 @@ export async function updateProposal(
   if (input.title !== undefined) updateData.title = input.title;
   if (input.description !== undefined) updateData.description = input.description;
   if (input.status !== undefined) updateData.status = input.status;
+  if (input.tags !== undefined) updateData.tags = input.tags;
 
   const proposal = await proposalRepository.update(proposalId, updateData);
 

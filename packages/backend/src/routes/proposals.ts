@@ -8,12 +8,15 @@ import { getDatabase } from '../config/database';
 
 const router = Router();
 
+const tagSchema = z.string().min(1).max(50).transform(t => t.trim().toLowerCase());
+
 const createProposalSchema = z.object({
   title: z.string().min(3).max(500),
   description: z.string().min(10).max(10000),
   category: z.string().min(1).max(50).optional(),
   latitude: z.coerce.number().min(-90).max(90).optional(),
   longitude: z.coerce.number().min(-180).max(180).optional(),
+  tags: z.array(tagSchema).max(10).optional(),
 });
 
 const updateProposalSchema = z.object({
@@ -21,6 +24,7 @@ const updateProposalSchema = z.object({
   description: z.string().min(10).max(10000).optional(),
   status: z.enum(['OPEN', 'UNDER_REVIEW', 'FEASIBILITY', 'PLANNED', 'IMPLEMENTED', 'REJECTED']).optional(),
   rejection_reason: z.string().min(1).max(2000).optional(),
+  tags: z.array(tagSchema).max(10).optional(),
 });
 
 router.get('/export/csv', authenticate, requireRole('ADMIN', 'MODERATOR'), async (_req: AuthRequest, res: Response, next) => {
@@ -60,11 +64,12 @@ router.get('/', optionalAuth, async (req: AuthRequest, res: Response, next) => {
     const { page, limit } = req.safeQuery;
     const status = req.query.status as 'OPEN' | 'UNDER_REVIEW' | 'FEASIBILITY' | 'PLANNED' | 'IMPLEMENTED' | 'REJECTED' | undefined;
     const category = req.query.category as string | undefined;
+    const tag = req.query.tag as string | undefined;
     const sort = (req.query.sort as 'createdAt' | 'voteCount') || 'createdAt';
     const search = req.query.search as string | undefined;
 
     const result = await proposalService.listProposals(
-      { page, limit, status, category, sort, search },
+      { page, limit, status, category, tag, sort, search },
       req.user?.id
     );
 

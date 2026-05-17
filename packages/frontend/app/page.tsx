@@ -306,6 +306,19 @@ export default async function HomePage() {
                         {proposal.description}
                       </p>
 
+                      {proposal.tags && proposal.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {proposal.tags.slice(0, 3).map((tag) => (
+                            <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-[#F3EDF7] text-[#49454F]">
+                              #{tag}
+                            </span>
+                          ))}
+                          {proposal.tags.length > 3 && (
+                            <span className="text-xs text-[#79747E] self-center">+{proposal.tags.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between pt-3 border-t border-[#F3EDF7]">
                         <p className="text-xs text-[#79747E] flex items-center gap-1">
                           <FileText className="w-3 h-3" />
@@ -383,6 +396,19 @@ export default async function HomePage() {
                       <p className="text-[#49454F] text-sm line-clamp-3 mb-4 leading-relaxed">
                         {proposal.description}
                       </p>
+
+                      {proposal.tags && proposal.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {proposal.tags.slice(0, 3).map((tag) => (
+                            <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-[#F3EDF7] text-[#49454F]">
+                              #{tag}
+                            </span>
+                          ))}
+                          {proposal.tags.length > 3 && (
+                            <span className="text-xs text-[#79747E] self-center">+{proposal.tags.length - 3}</span>
+                          )}
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-between pt-3 border-t border-[#E8DEF8]">
                         <p className="text-xs text-[#79747E] flex items-center gap-1">

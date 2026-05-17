@@ -9,6 +9,7 @@ export interface ProposalQueryParams {
   limit?: number;
   status?: ProposalStatus;
   category?: string;
+  tag?: string;
   sort?: 'createdAt' | 'voteCount';
   search?: string;
 }
@@ -20,6 +21,7 @@ export async function getProposals(params: ProposalQueryParams = {}): Promise<Pr
   if (params.limit) queryParams.set('limit', String(params.limit));
   if (params.status) queryParams.set('status', params.status);
   if (params.category) queryParams.set('category', params.category);
+  if (params.tag) queryParams.set('tag', params.tag);
   if (params.sort) queryParams.set('sort', params.sort);
   if (params.search) queryParams.set('search', params.search);
 
