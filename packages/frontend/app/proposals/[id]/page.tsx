@@ -139,6 +139,26 @@ export default function ProposalDetailPage() {
               </div>
             )}
 
+            {(proposal.status === 'PLANNED' || proposal.status === 'IMPLEMENTED') && (proposal.budgetEstimated != null || proposal.budgetActual != null) && (
+              <div className="mb-6 p-4 bg-surface-base rounded-2xl border border-outline">
+                <h3 className="text-sm font-semibold text-on-surface mb-3">Budget</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {proposal.budgetEstimated != null && (
+                    <div>
+                      <p className="text-xs text-on-surface-variant">Estimated</p>
+                      <p className="text-lg font-bold text-on-surface">{proposal.budgetCurrency} {Number(proposal.budgetEstimated).toLocaleString()}</p>
+                    </div>
+                  )}
+                  {proposal.budgetActual != null && (
+                    <div>
+                      <p className="text-xs text-on-surface-variant">Actual</p>
+                      <p className="text-lg font-bold text-success">{proposal.budgetCurrency} {Number(proposal.budgetActual).toLocaleString()}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6 border-t border-outline">
               <div className="flex items-center gap-3">
                 <Avatar className="w-10 h-10 bg-primary-container">

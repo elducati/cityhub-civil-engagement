@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:cityhub_mobile/main.dart';
 import 'test_helper.dart';
@@ -18,7 +19,7 @@ void main() {
 
   group('Full User Flow', () {
     testWidgets('1. Auth: Login with registered user', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Sign in to participate'));
@@ -39,7 +40,7 @@ void main() {
     });
 
     testWidgets('2. Browse: View proposals list', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('See all'));
@@ -50,7 +51,7 @@ void main() {
     });
 
     testWidgets('3. Detail: View proposal detail page', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('See all'));
@@ -66,7 +67,7 @@ void main() {
     });
 
     testWidgets('4. Vote: Cast vote on proposal', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('See all'));
@@ -86,7 +87,7 @@ void main() {
     });
 
     testWidgets('5. Comment: Add comment to proposal', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('See all'));
@@ -110,7 +111,7 @@ void main() {
     });
 
     testWidgets('6. Admin: View dashboard', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.person_outlined));
@@ -124,7 +125,7 @@ void main() {
     });
 
     testWidgets('7. Admin: View users', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.person_outlined));
@@ -142,7 +143,7 @@ void main() {
     });
 
     testWidgets('8. Admin: View audit log', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.person_outlined));
@@ -161,7 +162,7 @@ void main() {
     });
 
     testWidgets('9. Roadmap: View roadmap page', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.map_outlined));
@@ -173,7 +174,7 @@ void main() {
     });
 
     testWidgets('10. Auth: Logout', (tester) async {
-      await tester.pumpWidget(const CityHubApp());
+      await tester.pumpWidget(const ProviderScope(child: CityHubApp()));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.person_outlined));

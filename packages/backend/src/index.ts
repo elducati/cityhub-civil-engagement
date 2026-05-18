@@ -113,21 +113,29 @@ app.get('/api/stats', async (_req: Request, res: Response) => {
     totalProposals: number;
     totalVotes: number;
     totalUsers: number;
+    totalBudgetEstimated: number;
+    totalBudgetActual: number;
   }>('public:stats');
   if (cached) {
     res.json(cached);
     return;
   }
   const db = getDatabase();
-  const [proposalCount, voteCount, userCount] = await Promise.all([
+  const [proposalCount, voteCount, userCount, budgetResult] = await Promise.all([
     db('proposals').count('id as total').first(),
     db('votes').count('id as total').first(),
     db('users').count('id as total').first(),
+    db('proposals').select(
+      db.raw("COALESCE(SUM(budget_estimated), 0) as total_estimated"),
+      db.raw("COALESCE(SUM(budget_actual), 0) as total_actual")
+    ).whereNotNull('budget_estimated').orWhereNotNull('budget_actual').first(),
   ]);
   const stats = {
     totalProposals: parseInt(String(proposalCount?.total || 0), 10),
     totalVotes: parseInt(String(voteCount?.total || 0), 10),
     totalUsers: parseInt(String(userCount?.total || 0), 10),
+    totalBudgetEstimated: parseFloat(String(budgetResult?.total_estimated || 0)),
+    totalBudgetActual: parseFloat(String(budgetResult?.total_actual || 0)),
   };
   await setCache('public:stats', stats, 300);
   res.json(stats);

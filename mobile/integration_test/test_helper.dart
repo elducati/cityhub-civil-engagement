@@ -84,8 +84,7 @@ Future<void> setupTestUser() async {
   });
   final data = response['data'] as Map<String, dynamic>? ?? response;
   authToken = data['token'] as String;
-  final user = data['user'] as Map<String, dynamic>;
-  userId = user['id'] as String;
+  userId = data['id'] as String;
 }
 
 Future<void> setupTestProposal() async {

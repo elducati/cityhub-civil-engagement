@@ -249,7 +249,7 @@
     },
     {
       "name": "flutter",
-      "rootUri": "file:///C:/Users/geomo/AppData/Local/Temp/opencode/flutter/packages/flutter",
+      "rootUri": "file:///C:/tools/flutter/packages/flutter",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -261,7 +261,7 @@
     },
     {
       "name": "flutter_driver",
-      "rootUri": "file:///C:/Users/geomo/AppData/Local/Temp/opencode/flutter/packages/flutter_driver",
+      "rootUri": "file:///C:/tools/flutter/packages/flutter_driver",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -315,13 +315,13 @@
     },
     {
       "name": "flutter_test",
-      "rootUri": "file:///C:/Users/geomo/AppData/Local/Temp/opencode/flutter/packages/flutter_test",
+      "rootUri": "file:///C:/tools/flutter/packages/flutter_test",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "flutter_web_plugins",
-      "rootUri": "file:///C:/Users/geomo/AppData/Local/Temp/opencode/flutter/packages/flutter_web_plugins",
+      "rootUri": "file:///C:/tools/flutter/packages/flutter_web_plugins",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -339,7 +339,7 @@
     },
     {
       "name": "fuchsia_remote_debug_protocol",
-      "rootUri": "file:///C:/Users/geomo/AppData/Local/Temp/opencode/flutter/packages/fuchsia_remote_debug_protocol",
+      "rootUri": "file:///C:/tools/flutter/packages/fuchsia_remote_debug_protocol",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -393,7 +393,7 @@
     },
     {
       "name": "integration_test",
-      "rootUri": "file:///C:/Users/geomo/AppData/Local/Temp/opencode/flutter/packages/integration_test",
+      "rootUri": "file:///C:/tools/flutter/packages/integration_test",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -687,7 +687,7 @@
     },
     {
       "name": "sky_engine",
-      "rootUri": "file:///C:/Users/geomo/AppData/Local/Temp/opencode/flutter/bin/cache/pkg/sky_engine",
+      "rootUri": "file:///C:/tools/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
@@ -964,7 +964,7 @@
   ],
   "generator": "pub",
   "generatorVersion": "3.11.5",
-  "flutterRoot": "file:///C:/Users/geomo/AppData/Local/Temp/opencode/flutter",
+  "flutterRoot": "file:///C:/tools/flutter",
   "flutterVersion": "3.41.9",
   "pubCache": "file:///C:/Users/geomo/AppData/Local/Pub/Cache"
 }

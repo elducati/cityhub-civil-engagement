@@ -23,6 +23,8 @@ export interface DashboardStats {
   };
   thisMonthProposals: number;
   lastMonthProposals: number;
+  totalBudgetEstimated: number;
+  totalBudgetActual: number;
   recentActivity: Array<{
     id: string;
     action: string;
@@ -73,7 +75,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
-  const [statusCounts, roleCounts, uniqueVoterResult, monthlyResult] = await Promise.all([
+  const [statusCounts, roleCounts, uniqueVoterResult, monthlyResult, budgetResult] = await Promise.all([
     db('proposals').select('status').count('id as count').groupBy('status'),
     db('users').select('role').count('id as count').groupBy('role'),
     db('votes').countDistinct('user_id as count').first(),
@@ -81,6 +83,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       db.raw("COUNT(*) FILTER (WHERE created_at >= ?) as this_month", [thisMonthStart]),
       db.raw("COUNT(*) FILTER (WHERE created_at >= ? AND created_at < ?) as last_month", [lastMonthStart, lastMonthEnd])
     ).first(),
+    db('proposals').select(
+      db.raw("COALESCE(SUM(budget_estimated), 0) as total_estimated"),
+      db.raw("COALESCE(SUM(budget_actual), 0) as total_actual")
+    ).whereNotNull('budget_estimated').orWhereNotNull('budget_actual').first(),
   ]);
 
   const proposalsByStatus = { OPEN: 0, UNDER_REVIEW: 0, FEASIBILITY: 0, PLANNED: 0, IMPLEMENTED: 0, REJECTED: 0 };
@@ -103,6 +109,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const thisMonth = parseInt(String(monthlyResult?.this_month || 0), 10);
   const lastMonth = parseInt(String(monthlyResult?.last_month || 0), 10);
 
+  const totalBudgetEstimated = parseFloat(String(budgetResult?.total_estimated || 0));
+  const totalBudgetActual = parseFloat(String(budgetResult?.total_actual || 0));
+
   const recentActivity = await db('audit_logs')
     .select('id', 'action', 'entity_type', 'user_id', 'created_at')
     .orderBy('created_at', 'desc')
@@ -117,6 +126,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     usersByRole,
     thisMonthProposals: thisMonth,
     lastMonthProposals: lastMonth,
+    totalBudgetEstimated,
+    totalBudgetActual,
     recentActivity: recentActivity.map(r => ({
       id: r.id,
       action: r.action,

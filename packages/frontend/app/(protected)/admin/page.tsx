@@ -15,6 +15,7 @@ import {
   RefreshCw,
   ArrowUp,
   ArrowDown,
+  DollarSign,
 } from 'lucide-react';
 import { BarChart, DonutChart, TrendChart } from '@/components/ui/charts';
 
@@ -137,6 +138,21 @@ export default function AdminDashboardPage() {
           />
         </div>
 
+        <div className="grid gap-6 md:grid-cols-2">
+          <StatCard
+            title="Total Budget Estimated"
+            value={`$${stats.totalBudgetEstimated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            icon={DollarSign}
+            color="bg-primary"
+          />
+          <StatCard
+            title="Total Budget Actual"
+            value={`$${stats.totalBudgetActual.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            icon={DollarSign}
+            color="bg-success"
+          />
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-2">
           <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1">
             <CardHeader>
@@ -193,6 +209,23 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent className="flex flex-col items-center">
               <TrendChart current={stats.thisMonthProposals} previous={stats.lastMonthProposals} />
+            </CardContent>
+          </Card>
+
+          <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-1">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-on-surface flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Budget Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BarChart
+                data={[
+                  { label: 'Estimated', value: stats.totalBudgetEstimated, color: 'bg-primary' },
+                  { label: 'Actual', value: stats.totalBudgetActual, color: 'bg-success' },
+                ]}
+              />
             </CardContent>
           </Card>
         </div>

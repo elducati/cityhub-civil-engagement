@@ -106,6 +106,20 @@ export default async function RoadmapPage() {
                                   ))}
                                 </div>
                               )}
+                              {(proposal.budgetEstimated != null || proposal.budgetActual != null) && (
+                                <div className="flex gap-3 mt-3 text-xs">
+                                  {proposal.budgetEstimated != null && (
+                                    <span className="text-on-surface-variant">
+                                      Budget: {proposal.budgetCurrency} {Number(proposal.budgetEstimated).toLocaleString()}
+                                    </span>
+                                  )}
+                                  {proposal.budgetActual != null && (
+                                    <span className="text-success font-medium">
+                                      Spent: {proposal.budgetCurrency} {Number(proposal.budgetActual).toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <Badge className={`shrink-0 ${proposal._section === 'Planned' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
                               {proposal._section === 'Planned' ? 'Planned' : 'Done'}

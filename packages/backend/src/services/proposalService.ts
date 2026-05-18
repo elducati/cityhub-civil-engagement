@@ -22,6 +22,9 @@ export interface Proposal {
   latitude: number | null;
   longitude: number | null;
   tags: string[];
+  budgetEstimated: number | null;
+  budgetActual: number | null;
+  budgetCurrency: string;
 }
 
 export interface CreateProposalInput {
@@ -38,6 +41,9 @@ export interface UpdateProposalInput {
   description?: string;
   status?: ProposalStatus;
   tags?: string[];
+  budgetEstimated?: number | null;
+  budgetActual?: number | null;
+  budgetCurrency?: string;
 }
 
 function mapRow(row: {
@@ -54,6 +60,9 @@ function mapRow(row: {
   latitude?: number | null;
   longitude?: number | null;
   tags?: string[] | null;
+  budget_estimated?: number | null;
+  budget_actual?: number | null;
+  budget_currency?: string;
 }): Proposal {
   return {
     id: row.id,
@@ -69,6 +78,9 @@ function mapRow(row: {
     latitude: row.latitude || null,
     longitude: row.longitude || null,
     tags: row.tags || [],
+    budgetEstimated: row.budget_estimated ?? null,
+    budgetActual: row.budget_actual ?? null,
+    budgetCurrency: row.budget_currency ?? 'USD',
   };
 }
 
@@ -187,6 +199,9 @@ export async function updateProposal(
   if (input.description !== undefined) updateData.description = input.description;
   if (input.status !== undefined) updateData.status = input.status;
   if (input.tags !== undefined) updateData.tags = input.tags;
+  if (input.budgetEstimated !== undefined) updateData.budget_estimated = input.budgetEstimated;
+  if (input.budgetActual !== undefined) updateData.budget_actual = input.budgetActual;
+  if (input.budgetCurrency !== undefined) updateData.budget_currency = input.budgetCurrency;
 
   const proposal = await proposalRepository.update(proposalId, updateData);
 

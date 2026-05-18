@@ -19,26 +19,30 @@ const createProposalSchema = z.object({
   tags: z.array(tagSchema).max(10).optional(),
 });
 
+const budgetOptionalNum = z.coerce.number().min(0).max(9999999999.99).optional().nullable();
 const updateProposalSchema = z.object({
   title: z.string().min(3).max(500).optional(),
   description: z.string().min(10).max(10000).optional(),
   status: z.enum(['OPEN', 'UNDER_REVIEW', 'FEASIBILITY', 'PLANNED', 'IMPLEMENTED', 'REJECTED']).optional(),
   rejection_reason: z.string().min(1).max(2000).optional(),
   tags: z.array(tagSchema).max(10).optional(),
+  budgetEstimated: budgetOptionalNum,
+  budgetActual: budgetOptionalNum,
+  budgetCurrency: z.string().length(3).optional(),
 });
 
 router.get('/export/csv', authenticate, requireRole('ADMIN', 'MODERATOR'), async (_req: AuthRequest, res: Response, next) => {
   try {
     const db = getDatabase();
     const rows = await db('proposals')
-      .select('p.id', 'p.title', 'p.description', 'p.status', 'p.vote_count', 'p.category', 'p.created_at', 'u.email as author_email')
+      .select('p.id', 'p.title', 'p.description', 'p.status', 'p.vote_count', 'p.category', 'p.created_at', 'p.budget_estimated', 'p.budget_actual', 'p.budget_currency', 'u.email as author_email')
       .from('proposals as p')
       .join('users as u', 'p.author_id', 'u.id')
       .orderBy('p.created_at', 'desc');
 
-    const header = 'ID,Title,Description,Status,Votes,Category,Author,Date';
+    const header = 'ID,Title,Description,Status,Votes,Category,Author,Date,Budget Estimated,Budget Actual,Budget Currency';
     const csv = rows.map(r =>
-      `"${r.id}","${(r.title || '').replace(/"/g, '""')}","${(r.description || '').replace(/"/g, '""')}","${r.status}",${r.vote_count},"${r.category || ''}","${r.author_email}","${r.created_at}"`
+      `"${r.id}","${(r.title || '').replace(/"/g, '""')}","${(r.description || '').replace(/"/g, '""')}","${r.status}",${r.vote_count},"${r.category || ''}","${r.author_email}","${r.created_at}",${r.budget_estimated ?? ''},${r.budget_actual ?? ''},"${r.budget_currency || ''}"`
     ).join('\n');
 
     res.setHeader('Content-Type', 'text/csv');

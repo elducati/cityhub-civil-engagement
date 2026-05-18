@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatRelativeDate } from '@/lib/utils';
-import { Check, X, CheckCircle, Download, RefreshCw } from 'lucide-react';
+import { Check, X, CheckCircle, Download, RefreshCw, DollarSign, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { TableRowSkeleton, Skeleton } from '@/components/ui/skeleton';
@@ -39,10 +39,36 @@ export default function AdminProposalsPage() {
   const [filter, setFilter] = useState<ProposalStatus | undefined>('OPEN');
   const { data, isLoading, error, refetch } = useProposals({ status: filter, limit: 50 });
   const { mutate: updateProposal, isPending } = useUpdateProposal();
+  const [budgetModal, setBudgetModal] = useState<{ proposalId: string; status: ProposalStatus } | null>(null);
+  const [budgetEstimated, setBudgetEstimated] = useState('');
+  const [budgetActual, setBudgetActual] = useState('');
 
   const handleStatusChange = (proposalId: string, status: ProposalStatus, rejection_reason?: string) => {
     updateProposal({ proposalId, input: { status, rejection_reason } }, {
       onSuccess: () => refetch(),
+    });
+  };
+
+  const openBudgetModal = (proposalId: string, status: ProposalStatus) => {
+    setBudgetEstimated('');
+    setBudgetActual('');
+    setBudgetModal({ proposalId, status });
+  };
+
+  const handleBudgetSubmit = () => {
+    if (!budgetModal) return;
+    updateProposal({
+      proposalId: budgetModal.proposalId,
+      input: {
+        status: budgetModal.status,
+        budgetEstimated: budgetEstimated ? parseFloat(budgetEstimated) : undefined,
+        budgetActual: budgetActual ? parseFloat(budgetActual) : undefined,
+      },
+    }, {
+      onSuccess: () => {
+        setBudgetModal(null);
+        refetch();
+      },
     });
   };
 
@@ -86,7 +112,7 @@ export default function AdminProposalsPage() {
                 </tr>
               </thead>
               <tbody className="bg-surface-container">
-                {Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} cols={6} />)}
+                {Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} cols={7} />)}
               </tbody>
             </table>
           </div>
@@ -165,6 +191,7 @@ export default function AdminProposalsPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-on-surface uppercase tracking-wider">Title</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-on-surface uppercase tracking-wider">Author</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-on-surface uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-on-surface uppercase tracking-wider">Budget</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-on-surface uppercase tracking-wider">Votes</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-on-surface uppercase tracking-wider">Date</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-on-surface uppercase tracking-wider">Actions</th>
@@ -194,6 +221,17 @@ export default function AdminProposalsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={proposal.status} />
+                    </td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant">
+                      {proposal.budgetEstimated != null && (
+                        <div>Est: {proposal.budgetCurrency} {Number(proposal.budgetEstimated).toLocaleString()}</div>
+                      )}
+                      {proposal.budgetActual != null && (
+                        <div className="text-success font-medium">Act: {proposal.budgetCurrency} {Number(proposal.budgetActual).toLocaleString()}</div>
+                      )}
+                      {proposal.budgetEstimated == null && proposal.budgetActual == null && (
+                        <span className="text-on-surface-variant/50">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-on-surface">{proposal.voteCount}</td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant">{formatRelativeDate(proposal.createdAt)}</td>
@@ -251,23 +289,30 @@ export default function AdminProposalsPage() {
                             variant="success"
                             className="rounded-full"
                             disabled={isPending}
-                            onClick={() => handleStatusChange(proposal.id, 'PLANNED')}
+                            onClick={() => openBudgetModal(proposal.id, 'PLANNED')}
                           >
-                            Mark as Planned
+                            <DollarSign className="w-3 h-3 mr-1" />
+                            Set Budget & Plan
                           </Button>
                         )}
                         {proposal.status === 'PLANNED' && (
-                          <Button
-                            size="sm"
-                            variant="success"
-                            className="rounded-full"
-                            disabled={isPending}
-                            onClick={() => handleStatusChange(proposal.id, 'IMPLEMENTED')}
-                          >
-                            Mark Implemented
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full"
+                              disabled={isPending}
+                              onClick={() => openBudgetModal(proposal.id, 'IMPLEMENTED')}
+                            >
+                              <DollarSign className="w-3 h-3 mr-1" />
+                              Set Budget & Implement
+                            </Button>
+                          </>
                         )}
-                        {(proposal.status === 'IMPLEMENTED' || proposal.status === 'REJECTED') && (
+                        {proposal.status === 'IMPLEMENTED' && (
+                          <span className="text-xs text-on-surface-variant italic">Final — no actions</span>
+                        )}
+                        {proposal.status === 'REJECTED' && (
                           <span className="text-xs text-on-surface-variant italic">Final — no actions</span>
                         )}
                     </td>
@@ -283,6 +328,65 @@ export default function AdminProposalsPage() {
             </div>
           )}
         </Card>
+
+        {budgetModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <Card className="bg-surface-container rounded-3xl border-none shadow-elevation-3 p-6 w-full max-w-md mx-4">
+              <CardHeader className="p-0 pb-4">
+                <CardTitle className="text-lg font-semibold text-on-surface flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-primary" />
+                  Set Budget — {budgetModal.status === 'PLANNED' ? 'Mark as Planned' : 'Mark Implemented'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 space-y-4">
+                <p className="text-sm text-on-surface-variant">Enter budget details for this proposal before changing its status.</p>
+                <div>
+                  <label className="block text-sm font-medium text-on-surface mb-1">
+                    Estimated Budget ({budgetModal.status === 'IMPLEMENTED' ? 'optional, if not set already' : 'required'})
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={budgetEstimated}
+                      onChange={(e) => setBudgetEstimated(e.target.value)}
+                      placeholder="0.00"
+                      className="flex w-full rounded-xl border border-outline bg-surface-base pl-8 pr-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
+                    />
+                  </div>
+                </div>
+                {budgetModal.status === 'IMPLEMENTED' && (
+                  <div>
+                    <label className="block text-sm font-medium text-on-surface mb-1">Actual Budget</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={budgetActual}
+                        onChange={(e) => setBudgetActual(e.target.value)}
+                        placeholder="0.00"
+                        className="flex w-full rounded-xl border border-outline bg-surface-base pl-8 pr-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" className="rounded-full" onClick={() => setBudgetModal(null)}>
+                    <XCircle className="w-4 h-4 mr-1" />
+                    Cancel
+                  </Button>
+                  <Button className="rounded-full" onClick={handleBudgetSubmit} disabled={isPending}>
+                    {isPending ? 'Saving...' : 'Confirm'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

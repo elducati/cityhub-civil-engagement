@@ -14,6 +14,9 @@ export interface Proposal {
   latitude: number | null;
   longitude: number | null;
   tags: string[];
+  budgetEstimated: number | null;
+  budgetActual: number | null;
+  budgetCurrency: string;
 }
 
 export interface CreateProposalInput {
@@ -31,4 +34,7 @@ export interface UpdateProposalInput {
   status?: ProposalStatus;
   rejection_reason?: string;
   tags?: string[];
+  budgetEstimated?: number | null;
+  budgetActual?: number | null;
+  budgetCurrency?: string;
 }

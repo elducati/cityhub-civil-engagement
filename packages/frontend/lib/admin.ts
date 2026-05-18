@@ -20,6 +20,8 @@ export interface DashboardStats {
   };
   thisMonthProposals: number;
   lastMonthProposals: number;
+  totalBudgetEstimated: number;
+  totalBudgetActual: number;
   recentActivity: Array<{
     id: string;
     action: string;

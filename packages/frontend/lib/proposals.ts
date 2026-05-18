@@ -62,6 +62,8 @@ export interface PublicStats {
   totalProposals: number;
   totalVotes: number;
   totalUsers: number;
+  totalBudgetEstimated: number;
+  totalBudgetActual: number;
 }
 
 export async function getPublicStats(): Promise<PublicStats> {

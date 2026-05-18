@@ -18,6 +18,7 @@ import {
   ArrowRight,
   Star,
   ChevronRight,
+  DollarSign,
 } from 'lucide-react';
 
 export const revalidate = 300;
@@ -156,9 +157,9 @@ export default async function HomePage() {
                 color: 'text-[#6750A4]',
               },
               {
-                label: 'Decisions Made',
-                value: publicStats.totalProposals > 0 ? Math.ceil(publicStats.totalProposals * 0.15).toLocaleString() : '0',
-                icon: Rocket,
+                label: 'Budget Planned',
+                value: publicStats.totalBudgetEstimated > 0 ? `$${(publicStats.totalBudgetEstimated / 1000).toFixed(0)}K` : '$0',
+                icon: DollarSign,
                 color: 'text-[#6750A4]',
               },
             ].map((stat, i) => (

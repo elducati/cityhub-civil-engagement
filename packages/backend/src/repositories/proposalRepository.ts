@@ -17,6 +17,9 @@ export interface Proposal {
   latitude: number | null;
   longitude: number | null;
   tags: string[];
+  budget_estimated: number | null;
+  budget_actual: number | null;
+  budget_currency: string;
 }
 
 export interface ProposalWithAuthor extends Proposal {
@@ -33,6 +36,9 @@ export interface CreateProposalInput {
   latitude?: number;
   longitude?: number;
   tags?: string[];
+  budget_estimated?: number | null;
+  budget_actual?: number | null;
+  budget_currency?: string;
 }
 
 export interface UpdateProposalInput {
@@ -48,7 +54,7 @@ export class ProposalRepository extends BaseRepository<Proposal> {
 
   async findTrending(limit: number = 10): Promise<Proposal[]> {
     return this.db(this.tableName)
-      .select('id', 'title', 'description', 'author_id', 'status', 'vote_count', 'created_at', 'updated_at', 'category', 'latitude', 'longitude', 'tags')
+      .select('id', 'title', 'description', 'author_id', 'status', 'vote_count', 'created_at', 'updated_at', 'category', 'latitude', 'longitude', 'tags', 'budget_estimated', 'budget_actual', 'budget_currency')
       .where('status', 'OPEN')
       .orderBy('vote_count', 'desc')
       .limit(limit) as Promise<Proposal[]>;
@@ -84,7 +90,10 @@ export class ProposalRepository extends BaseRepository<Proposal> {
         'p.category',
         'p.latitude',
         'p.longitude',
-        'p.tags'
+        'p.tags',
+        'p.budget_estimated',
+        'p.budget_actual',
+        'p.budget_currency'
       )
       .from(`${this.tableName} as p`);
 
@@ -146,13 +155,16 @@ export class ProposalRepository extends BaseRepository<Proposal> {
           'p.latitude',
           'p.longitude',
           'p.tags',
+          'p.budget_estimated',
+          'p.budget_actual',
+          'p.budget_currency',
           this.db.raw('CASE WHEN v.id IS NOT NULL THEN true ELSE false END as user_vote')
         );
     }
 
     const rows = await query;
 
-    const proposals = rows.map((row: { id: string; title: string; description: string; author_id: string; status: ProposalStatus; vote_count: number; created_at: Date; updated_at: Date; user_vote?: boolean; category?: string | null; latitude?: number | null; longitude?: number | null; tags?: string[] | null }) => ({
+    const proposals = rows.map((row: { id: string; title: string; description: string; author_id: string; status: ProposalStatus; vote_count: number; created_at: Date; updated_at: Date; user_vote?: boolean; category?: string | null; latitude?: number | null; longitude?: number | null; tags?: string[] | null; budget_estimated?: number | null; budget_actual?: number | null; budget_currency?: string }) => ({
       id: row.id,
       title: row.title,
       description: row.description,
@@ -166,6 +178,9 @@ export class ProposalRepository extends BaseRepository<Proposal> {
       latitude: row.latitude || null,
       longitude: row.longitude || null,
       tags: row.tags || [],
+      budget_estimated: row.budget_estimated ?? null,
+      budget_actual: row.budget_actual ?? null,
+      budget_currency: row.budget_currency ?? 'USD',
     }));
 
     return {
@@ -194,6 +209,9 @@ export class ProposalRepository extends BaseRepository<Proposal> {
         'p.latitude',
         'p.longitude',
         'p.tags',
+        'p.budget_estimated',
+        'p.budget_actual',
+        'p.budget_currency',
         'u.email as author_email'
       )
       .from(`${this.tableName} as p`)
@@ -213,6 +231,9 @@ export class ProposalRepository extends BaseRepository<Proposal> {
       latitude: input.latitude || null,
       longitude: input.longitude || null,
       tags: input.tags || [],
+      budget_estimated: input.budget_estimated ?? null,
+      budget_actual: input.budget_actual ?? null,
+      budget_currency: input.budget_currency ?? 'USD',
     });
   }
 
