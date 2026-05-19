@@ -8,25 +8,24 @@ class Proposal {
   final String id;
   final String title;
   final String description;
-  @JsonKey(name: 'author_id')
+  @JsonKey(name: 'authorId')
   final String authorId;
   final String status;
-  @JsonKey(name: 'vote_count')
+  @JsonKey(name: 'voteCount')
   final int voteCount;
-  @JsonKey(name: 'created_at')
+  @JsonKey(name: 'createdAt')
   final DateTime createdAt;
-  @JsonKey(name: 'updated_at')
+  @JsonKey(name: 'updatedAt')
   final DateTime? updatedAt;
-  @JsonKey(name: 'category')
   final String? category;
   final double? latitude;
   final double? longitude;
-  @JsonKey(name: 'rejection_reason')
+  @JsonKey(name: 'rejectionReason')
   final String? rejectionReason;
   final User? author;
-  @JsonKey(name: 'user_voted')
+  @JsonKey(name: 'userVote')
   final bool? userVoted;
-  @JsonKey(name: 'user_has_voted')
+  @JsonKey(name: 'userHasVoted')
   final bool? userHasVoted;
 
   const Proposal({
@@ -110,7 +109,7 @@ class PaginationInfo {
   final int page;
   final int limit;
   final int total;
-  @JsonKey(name: 'total_pages')
+  @JsonKey(name: 'totalPages')
   final int totalPages;
 
   const PaginationInfo({
@@ -173,15 +172,17 @@ class VoteResponse {
 
   factory VoteResponse.fromJson(Map<String, dynamic> json) =>
       _$VoteResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$VoteResponseToJson(this);
 }
 
 @JsonSerializable()
 class StatsResponse {
-  @JsonKey(name: 'total_proposals')
+  @JsonKey(name: 'totalProposals')
   final int totalProposals;
-  @JsonKey(name: 'total_votes')
+  @JsonKey(name: 'totalVotes')
   final int totalVotes;
-  @JsonKey(name: 'total_users')
+  @JsonKey(name: 'totalUsers')
   final int totalUsers;
 
   const StatsResponse({
@@ -192,4 +193,8 @@ class StatsResponse {
 
   factory StatsResponse.fromJson(Map<String, dynamic> json) =>
       _$StatsResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$StatsResponseToJson(this);
 }
+
+

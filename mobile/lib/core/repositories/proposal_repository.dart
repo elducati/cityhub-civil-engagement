@@ -91,15 +91,17 @@ class ProposalRepository implements IProposalRepository {
   Future<StatsResponse> getStats() async {
     final response = await _client.get(ApiEndpoints.stats);
     final data = response.data as Map<String, dynamic>;
-    return StatsResponse.fromJson(data);
+    final unwrapped = data['data'] as Map<String, dynamic>? ?? data;
+    return StatsResponse.fromJson(unwrapped);
   }
 
   @override
   Future<List<Proposal>> getTrending() async {
     final response = await _client.get(ApiEndpoints.proposalsTrending);
     final data = response.data as Map<String, dynamic>;
-    final unwrapped = data['data'] as List<dynamic>? ?? data as List<dynamic>;
-    return unwrapped.map((e) => Proposal.fromJson(e as Map<String, dynamic>)).toList();
+    final body = data['data'] as Map<String, dynamic>? ?? data;
+    final items = body['data'] as List<dynamic>;
+    return items.map((e) => Proposal.fromJson(e as Map<String, dynamic>)).toList();
   }
 }
 

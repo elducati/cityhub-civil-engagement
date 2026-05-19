@@ -10,40 +10,40 @@ Proposal _$ProposalFromJson(Map<String, dynamic> json) => Proposal(
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String,
-      authorId: json['author_id'] as String,
+      authorId: json['authorId'] as String,
       status: json['status'] as String,
-      voteCount: (json['vote_count'] as num).toInt(),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] == null
+      voteCount: (json['voteCount'] as num).toInt(),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: json['updatedAt'] == null
           ? null
-          : DateTime.parse(json['updated_at'] as String),
+          : DateTime.parse(json['updatedAt'] as String),
       category: json['category'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
-      rejectionReason: json['rejection_reason'] as String?,
+      rejectionReason: json['rejectionReason'] as String?,
       author: json['author'] == null
           ? null
           : User.fromJson(json['author'] as Map<String, dynamic>),
-      userVoted: json['user_voted'] as bool?,
-      userHasVoted: json['user_has_voted'] as bool?,
+      userVoted: json['userVote'] as bool?,
+      userHasVoted: json['userHasVoted'] as bool?,
     );
 
 Map<String, dynamic> _$ProposalToJson(Proposal instance) => <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
       'description': instance.description,
-      'author_id': instance.authorId,
+      'authorId': instance.authorId,
       'status': instance.status,
-      'vote_count': instance.voteCount,
-      'created_at': instance.createdAt.toIso8601String(),
-      'updated_at': instance.updatedAt?.toIso8601String(),
+      'voteCount': instance.voteCount,
+      'createdAt': instance.createdAt.toIso8601String(),
+      'updatedAt': instance.updatedAt?.toIso8601String(),
       'category': instance.category,
       'latitude': instance.latitude,
       'longitude': instance.longitude,
-      'rejection_reason': instance.rejectionReason,
+      'rejectionReason': instance.rejectionReason,
       'author': instance.author,
-      'user_voted': instance.userVoted,
-      'user_has_voted': instance.userHasVoted,
+      'userVote': instance.userVoted,
+      'userHasVoted': instance.userHasVoted,
     };
 
 PaginatedResponse _$PaginatedResponseFromJson(Map<String, dynamic> json) =>
@@ -66,7 +66,7 @@ PaginationInfo _$PaginationInfoFromJson(Map<String, dynamic> json) =>
       page: (json['page'] as num).toInt(),
       limit: (json['limit'] as num).toInt(),
       total: (json['total'] as num).toInt(),
-      totalPages: (json['total_pages'] as num).toInt(),
+      totalPages: (json['totalPages'] as num).toInt(),
     );
 
 Map<String, dynamic> _$PaginationInfoToJson(PaginationInfo instance) =>
@@ -74,7 +74,7 @@ Map<String, dynamic> _$PaginationInfoToJson(PaginationInfo instance) =>
       'page': instance.page,
       'limit': instance.limit,
       'total': instance.total,
-      'total_pages': instance.totalPages,
+      'totalPages': instance.totalPages,
     };
 
 CreateProposalRequest _$CreateProposalRequestFromJson(
@@ -128,14 +128,14 @@ Map<String, dynamic> _$VoteResponseToJson(VoteResponse instance) =>
 
 StatsResponse _$StatsResponseFromJson(Map<String, dynamic> json) =>
     StatsResponse(
-      totalProposals: (json['total_proposals'] as num).toInt(),
-      totalVotes: (json['total_votes'] as num).toInt(),
-      totalUsers: (json['total_users'] as num).toInt(),
+      totalProposals: (json['totalProposals'] as num).toInt(),
+      totalVotes: (json['totalVotes'] as num).toInt(),
+      totalUsers: (json['totalUsers'] as num).toInt(),
     );
 
 Map<String, dynamic> _$StatsResponseToJson(StatsResponse instance) =>
     <String, dynamic>{
-      'total_proposals': instance.totalProposals,
-      'total_votes': instance.totalVotes,
-      'total_users': instance.totalUsers,
+      'totalProposals': instance.totalProposals,
+      'totalVotes': instance.totalVotes,
+      'totalUsers': instance.totalUsers,
     };

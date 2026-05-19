@@ -18,7 +18,6 @@ class ApiClient {
     ));
 
     _dio.interceptors.add(AuthInterceptor(_storage));
-    _dio.interceptors.add(RetryInterceptor());
   }
 
   Future<String?> getToken() => _storage.read(key: _tokenKey);
@@ -57,9 +56,13 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await _storage.read(key: 'auth_token');
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
+    try {
+      final token = await _storage.read(key: 'auth_token');
+      if (token != null && token.isNotEmpty) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
+    } catch (_) {
+      // Storage unavailable (e.g. test environment) — proceed without auth
     }
     handler.next(options);
   }
@@ -73,35 +76,4 @@ class AuthInterceptor extends Interceptor {
   }
 }
 
-class RetryInterceptor extends Interceptor {
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (_shouldRetry(err)) {
-      try {
-        final response = await _retry(err.requestOptions);
-        handler.resolve(response);
-        return;
-      } catch (_) {}
-    }
-    handler.next(err);
-  }
 
-  bool _shouldRetry(DioException err) {
-    return err.type == DioExceptionType.connectionTimeout ||
-        err.type == DioExceptionType.receiveTimeout ||
-        err.type == DioExceptionType.connectionError;
-  }
-
-  Future<Response> _retry(RequestOptions requestOptions) async {
-    final dio = Dio();
-    return dio.request(
-      requestOptions.path,
-      options: Options(
-        method: requestOptions.method,
-        headers: requestOptions.headers,
-      ),
-      data: requestOptions.data,
-      queryParameters: requestOptions.queryParameters,
-    );
-  }
-}

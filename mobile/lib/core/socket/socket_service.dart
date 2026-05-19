@@ -36,7 +36,12 @@ class SocketService {
     if (_socket?.connected == true) return;
 
     _state = SocketConnectionState.connecting;
-    final token = await _storage.read(key: 'auth_token');
+    String? token;
+    try {
+      token = await _storage.read(key: 'auth_token');
+    } catch (_) {
+      token = null;
+    }
 
     _socket = io.io(
       AppConstants.socketUrl,

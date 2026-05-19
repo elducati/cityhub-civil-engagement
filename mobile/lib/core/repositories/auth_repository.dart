@@ -9,15 +9,31 @@ class AuthRepository implements IAuthRepository {
 
   AuthRepository(this._client);
 
+  Map<String, dynamic> _unwrap(dynamic responseData) {
+    final data = responseData as Map<String, dynamic>;
+    final unwrapped = data['data'] as Map<String, dynamic>? ?? data;
+    return unwrapped;
+  }
+
+  Map<String, dynamic> _mapAuthResponse(Map<String, dynamic> unwrapped) {
+    return {
+      'token': unwrapped['token'],
+      'user': {
+        'id': unwrapped['id'],
+        'email': unwrapped['email'],
+        'role': unwrapped['role'],
+      },
+    };
+  }
+
   @override
   Future<AuthResponse> login(String email, String password) async {
     final response = await _client.post(
       ApiEndpoints.login,
       data: LoginRequest(email: email, password: password).toJson(),
     );
-    final data = response.data as Map<String, dynamic>;
-    final unwrapped = data['data'] as Map<String, dynamic>? ?? data;
-    final authResponse = AuthResponse.fromJson(unwrapped);
+    final unwrapped = _unwrap(response.data);
+    final authResponse = AuthResponse.fromJson(_mapAuthResponse(unwrapped));
     await _client.setToken(authResponse.token);
     return authResponse;
   }
@@ -28,9 +44,8 @@ class AuthRepository implements IAuthRepository {
       ApiEndpoints.register,
       data: RegisterRequest(email: email, password: password, name: name).toJson(),
     );
-    final data = response.data as Map<String, dynamic>;
-    final unwrapped = data['data'] as Map<String, dynamic>? ?? data;
-    final authResponse = AuthResponse.fromJson(unwrapped);
+    final unwrapped = _unwrap(response.data);
+    final authResponse = AuthResponse.fromJson(_mapAuthResponse(unwrapped));
     await _client.setToken(authResponse.token);
     return authResponse;
   }
@@ -38,8 +53,7 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<User> getProfile() async {
     final response = await _client.get(ApiEndpoints.profile);
-    final data = response.data as Map<String, dynamic>;
-    final unwrapped = data['data'] as Map<String, dynamic>? ?? data;
+    final unwrapped = _unwrap(response.data);
     return User.fromJson(unwrapped);
   }
 
